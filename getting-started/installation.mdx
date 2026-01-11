@@ -64,7 +64,11 @@ After installation, initialize Cocobase in your project with your API key:
 <Tabs>
   <Tab title="JavaScript">
     ```typescript
-    
+    import { Cocobase } from "cocobase";
+
+    const db = new Cocobase({
+      apiKey: "your-api-key-here",
+    });
     ```
   </Tab>
 
@@ -211,19 +215,3 @@ For JavaScript/TypeScript:
 - Check that you're using the correct import syntax
 - Restart your development server after installation
 
-> [!NOTE]
-> Need help? Join our [Discord community](https://discord.gg/cocobase) or check the [FAQ](/support/faq).
-
-## Framework-Specific Guides
-
-Cocobase works with all modern frameworks. Here are quick links:
-
-- **React/Next.js** - [Integration Guide](/frameworks/react)
-- **Vue/Nuxt** - [Integration Guide](/frameworks/vue)
-- **Angular** - [Integration Guide](/frameworks/angular)
-- **Flutter** - [Integration Guide](/frameworks/flutter)
-- **React Native** - [Integration Guide](/frameworks/react-native)
-
----
-
-**Ready to start building?** Head to the [Quick Start Guide](/getting-started/quickstart) →
