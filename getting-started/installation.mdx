@@ -29,25 +29,28 @@ Choose your preferred language and install the Cocobase SDK:
   </Tab>
 
   <Tab title="Dart">
-    # Add to pubspec.yaml,
-    ```bash
+    ```yaml
+    # Add to pubspec.yaml
     dependencies:
       cocobase: ^1.0.0
     ```
+    
+    ```bash
     # Then run
-    ```bash
     flutter pub get
-    ```
-    # or for Dart projects,
-    ```bash
+    
+    # or for Dart projects
     dart pub get
     ```
   </Tab>
 
   <Tab title="Go">
     ```bash
-    # Using go modules
-    go get github.com/cocobase-team/cocobase-go
+    # Using go get
+    go get github.com/lordace-coder/cocobase-go
+    
+    # Update dependencies
+    go mod tidy
     ```
   </Tab>
 
@@ -79,19 +82,41 @@ After installation, initialize Cocobase in your project with your API key:
 
   <Tab title="Dart">
     ```dart
-    
+    import 'package:cocobase/cocobase.dart';
+
+    void main() async {
+      // Initialize Cocobase
+      final db = Cocobase(apiKey: 'your-api-key');
+      
+      // You're ready to use Cocobase!
+    }
     ```
   </Tab>
 
   <Tab title="Go">
     ```go
-    
+    package main
+
+    import (
+        "github.com/lordace-coder/cocobase-go/cocobase"
+    )
+
+    func main() {
+        client := cocobase.NewClient(cocobase.Config{
+            APIKey: "your-api-key-here",
+        })
+        
+        // You're ready to use Cocobase!
+    }
     ```
   </Tab>
 
   <Tab title="Python">
     ```python
-    
+    from cocobase import Cocobase
+
+    # Initialize Cocobase
+    db = Cocobase(api_key="your-api-key-here")
     ```
   </Tab>
 </Tabs>
@@ -109,7 +134,7 @@ The Cocobase client accepts these configuration options:
 
 ## Environment Variables
 
-Set up your API key using environment variables:
+Set up your API key using environment variables for better security:
 
 <Tabs>
   <Tab title="JavaScript">
@@ -121,19 +146,47 @@ Set up your API key using environment variables:
     # or
     NEXT_PUBLIC_COCOBASE_API_KEY=your_api_key_here
     ```
+    
+    ```typescript
+    // Usage in code
+    import { Cocobase } from "cocobase";
+
+    const db = new Cocobase({
+      apiKey: process.env.COCOBASE_API_KEY,
+    });
+    ```
   </Tab>
 
   <Tab title="Dart">
     ```bash
-    # .env file or use dart-define
+    # .env file
     COCOBASE_API_KEY=your_api_key_here
+    ```
+    
+    ```dart
+    // Load environment variables (using flutter_dotenv)
+    import 'package:flutter_dotenv/flutter_dotenv.dart';
+    
+    await dotenv.load();
+    final db = Cocobase(apiKey: dotenv.env['COCOBASE_API_KEY']!);
     ```
   </Tab>
 
   <Tab title="Go">
     ```bash
-    # .env file
-    COCOBASE_API_KEY=your_api_key_here
+    # .env file or export
+    export COCOBASE_API_KEY=your_api_key_here
+    
+    # Windows (PowerShell)
+    $env:COCOBASE_API_KEY="your_api_key_here"
+    ```
+    
+    ```go
+    import "os"
+    
+    client := cocobase.NewClient(cocobase.Config{
+        APIKey: os.Getenv("COCOBASE_API_KEY"),
+    })
     ```
   </Tab>
 
@@ -141,6 +194,81 @@ Set up your API key using environment variables:
     ```bash
     # .env file
     COCOBASE_API_KEY=your_api_key_here
+    ```
+    
+    ```python
+    import os
+    from cocobase import Cocobase
+    
+    db = Cocobase(api_key=os.getenv("COCOBASE_API_KEY"))
+    ```
+  </Tab>
+</Tabs>
+
+## Framework-Specific Setup
+
+<Tabs>
+  <Tab title="React/Next.js">
+    ```typescript
+    // lib/cocobase.ts
+    import { Cocobase } from "cocobase";
+
+    export const db = new Cocobase({
+      apiKey: process.env.NEXT_PUBLIC_COCOBASE_API_KEY,
+    });
+    ```
+  </Tab>
+
+  <Tab title="Vue/Nuxt">
+    ```typescript
+    // plugins/cocobase.ts
+    import { Cocobase } from "cocobase";
+
+    export default defineNuxtPlugin(() => {
+      const db = new Cocobase({
+        apiKey: process.env.NUXT_PUBLIC_COCOBASE_API_KEY,
+      });
+
+      return {
+        provide: {
+          db,
+        },
+      };
+    });
+    ```
+  </Tab>
+
+  <Tab title="Flutter">
+    ```dart
+    import 'package:flutter/material.dart';
+    import 'package:cocobase/cocobase.dart';
+
+    void main() {
+      runApp(MyApp());
+    }
+
+    class MyApp extends StatelessWidget {
+      final db = Cocobase(apiKey: 'your-api-key');
+
+      @override
+      Widget build(BuildContext context) {
+        return MaterialApp(
+          title: 'Cocobase Demo',
+          home: HomeScreen(db: db),
+        );
+      }
+    }
+    ```
+  </Tab>
+
+  <Tab title="Node.js/Express">
+    ```typescript
+    // config/database.js
+    import { Cocobase } from "cocobase";
+
+    export const db = new Cocobase({
+      apiKey: process.env.COCOBASE_API_KEY,
+    });
     ```
   </Tab>
 </Tabs>
@@ -152,25 +280,96 @@ Test your installation by creating a simple document:
 <Tabs>
   <Tab title="JavaScript">
     ```typescript
-    
+    async function testConnection() {
+      try {
+        // Create a test document
+        const result = await db.createDocument("test_collection", {
+          message: "Hello, Cocobase!",
+          timestamp: new Date().toISOString(),
+        });
+
+        console.log("✅ Connected to Cocobase!");
+        console.log("Created document:", result);
+      } catch (error) {
+        console.error("❌ Connection failed:", error);
+      }
+    }
+
+    testConnection();
     ```
   </Tab>
 
   <Tab title="Dart">
     ```dart
-    
+    void testConnection() async {
+      try {
+        // Create a document
+        final user = await db.createDocument('users', {
+          'name': 'John Doe',
+          'email': 'john@example.com',
+        });
+
+        print('✅ Connected to Cocobase!');
+        print('Created user: ${user.id}');
+
+        // List documents
+        final users = await db.listDocuments('users');
+        print('Total users: ${users.length}');
+      } catch (error) {
+        print('❌ Connection failed: $error');
+      }
+    }
     ```
   </Tab>
 
   <Tab title="Go">
     ```go
-    
+    package main
+
+    import (
+        "context"
+        "fmt"
+        "log"
+
+        "github.com/lordace-coder/cocobase-go/cocobase"
+    )
+
+    func main() {
+        client := cocobase.NewClient(cocobase.Config{
+            APIKey: "your-api-key-here",
+        })
+
+        ctx := context.Background()
+
+        // Try to list documents
+        docs, err := client.ListDocuments(ctx, "users", nil)
+        if err != nil {
+            log.Printf("❌ Connection failed: %v\n", err)
+            return
+        }
+
+        fmt.Printf("✅ Connected to Cocobase! Found %d documents\n", len(docs))
+    }
     ```
   </Tab>
 
   <Tab title="Python">
     ```python
-    
+    async def test_connection():
+        try:
+            # Create a test document
+            result = await db.create_document("test_collection", {
+                "message": "Hello, Cocobase!",
+                "timestamp": datetime.now().isoformat(),
+            })
+
+            print("✅ Connected to Cocobase!")
+            print(f"Created document: {result}")
+        except Exception as error:
+            print(f"❌ Connection failed: {error}")
+
+    # Run the test
+    asyncio.run(test_connection())
     ```
   </Tab>
 </Tabs>
@@ -205,6 +404,12 @@ If you get a "package not found" error, make sure:
 - Your package manager is up to date
 - You have the correct package name for your language
 
+**For Go users:** If you see `cannot find package`, run:
+```bash
+go mod tidy
+go get github.com/lordace-coder/cocobase-go
+```
+
 ### API Key Issues
 
 If you get authentication errors:
@@ -215,8 +420,24 @@ If you get authentication errors:
 
 ### Module Import Errors
 
-For JavaScript/TypeScript:
+**JavaScript/TypeScript:**
 - Ensure your bundler supports ES modules
 - Check that you're using the correct import syntax
 - Restart your development server after installation
 
+**Go:**
+```bash
+# Clear module cache if needed
+go clean -modcache
+go get github.com/lordace-coder/cocobase-go
+```
+
+**Dart/Flutter:**
+```bash
+# Clear pub cache if needed
+flutter pub cache repair
+flutter pub get
+```
+
+> [!NOTE]
+> Need help? Join our [Discord community](https://discord.gg/cocobase) or email hello@cocobase.buzz
