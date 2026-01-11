@@ -54,7 +54,11 @@
   "navigation": [
     {
       "group": "Get Started",
-      "pages": ["index", "guides/getting-started"]
+      "pages": [
+        "index",
+        "getting-started/installation",
+        "guides/getting-started"
+      ]
     },
     {
       "group": "Core Concepts",
@@ -115,7 +119,10 @@
     },
     {
       "group": "API Documentation",
-      "pages": ["api-reference/introduction", "api-reference/authentication"]
+      "pages": [
+        "api-reference/introduction",
+        "api-reference/authentication"
+      ]
     },
     {
       "group": "Collections API",
