@@ -8,7 +8,7 @@ Before installing Cocobase, make sure you have:
 
 - An account at [cocobase.buzz](https://cocobase.buzz)
 - Your project API key (found in your dashboard)
-- A package manager installed (npm, yarn, pub, pip, or go modules)
+- A package manager installed (npm, yarn, pub, or go modules)
 
 ## Install the SDK
 
@@ -54,15 +54,7 @@ Choose your preferred language and install the Cocobase SDK:
     ```
   </Tab>
 
-  <Tab title="Python">
-    ```bash
-    # Using pip
-    pip install cocobase
 
-    # Using poetry
-    poetry add cocobase
-    ```
-  </Tab>
 </Tabs>
 
 ## Initialize Cocobase
@@ -111,14 +103,7 @@ After installation, initialize Cocobase in your project with your API key:
     ```
   </Tab>
 
-  <Tab title="Python">
-    ```python
-    from cocobase import Cocobase
 
-    # Initialize Cocobase
-    db = Cocobase(api_key="your-api-key-here")
-    ```
-  </Tab>
 </Tabs>
 
 ## Configuration Options
@@ -186,19 +171,7 @@ Set up your API key using environment variables for better security:
     ```
   </Tab>
 
-  <Tab title="Python">
-    ```bash
-    # .env file
-    COCOBASE_API_KEY=your_api_key_here
-    ```
-    
-    ```python
-    import os
-    from cocobase import Cocobase
-    
-    db = Cocobase(api_key=os.getenv("COCOBASE_API_KEY"))
-    ```
-  </Tab>
+
 </Tabs>
 
 ## Framework-Specific Setup
@@ -349,25 +322,7 @@ Test your installation by creating a simple document:
     ```
   </Tab>
 
-  <Tab title="Python">
-    ```python
-    async def test_connection():
-        try:
-            # Create a test document
-            result = await db.create_document("test_collection", {
-                "message": "Hello, Cocobase!",
-                "timestamp": datetime.now().isoformat(),
-            })
 
-            print("✅ Connected to Cocobase!")
-            print(f"Created document: {result}")
-        except Exception as error:
-            print(f"❌ Connection failed: {error}")
-
-    # Run the test
-    asyncio.run(test_connection())
-    ```
-  </Tab>
 </Tabs>
 
 If the code runs without errors, you're all set! 🎉
