@@ -623,22 +623,29 @@ End the user session:
     ```
   </Tab>
 
-{" "}
-<Tab title="Dart">
-  ```dart await db.changePassword( oldPassword: 'oldPassword123', newPassword:
-  'newPassword456', ); ```
-</Tab>
+  <Tab title="Dart">
+    ```dart
+    await db.auth.changePassword(
+      oldPassword: 'oldPassword123',
+      newPassword: 'newPassword456',
+    );
+    ```
+  </Tab>
 
-{" "}
-<Tab title="Go">
-  ```go err := client.ChangePassword(ctx, "oldPassword123", "newPassword456")
-  ```
-</Tab>
+  <Tab title="Go">
+    ```go
+    err := client.ChangePassword(ctx, "oldPassword123", "newPassword456")
+    if err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
 
-{" "}
-<Tab title="Python">
-  ```python db.auth.change_password("oldPassword123", "newPassword456") ```
-</Tab>
+  <Tab title="Python">
+    ```python
+    db.auth.change_password("oldPassword123", "newPassword456")
+    ```
+  </Tab>
 
   <Tab title="HTTP">
     ```bash
@@ -663,20 +670,26 @@ End the user session:
     ```
   </Tab>
 
-{" "}
-<Tab title="Dart">
-  ```dart await db.requestPasswordReset(email: 'user@example.com'); ```
-</Tab>
+  <Tab title="Dart">
+    ```dart
+    await db.auth.requestPasswordReset(email: 'user@example.com');
+    ```
+  </Tab>
 
-{" "}
-<Tab title="Go">
-  ```go err := client.RequestPasswordReset(ctx, "user@example.com") ```
-</Tab>
+  <Tab title="Go">
+    ```go
+    err := client.RequestPasswordReset(ctx, "user@example.com")
+    if err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
 
-{" "}
-<Tab title="Python">
-  ```python db.auth.request_password_reset("user@example.com") ```
-</Tab>
+  <Tab title="Python">
+    ```python
+    db.auth.request_password_reset("user@example.com")
+    ```
+  </Tab>
 
   <Tab title="HTTP">
     ```bash
@@ -700,23 +713,29 @@ End the user session:
     ```
   </Tab>
 
-{" "}
-<Tab title="Dart">
-  ```dart await db.resetPassword( token: 'reset_token_from_email', newPassword:
-  'newPassword123', ); ```
-</Tab>
+  <Tab title="Dart">
+    ```dart
+    await db.auth.resetPassword(
+      token: 'reset_token_from_email',
+      newPassword: 'newPassword123',
+    );
+    ```
+  </Tab>
 
-{" "}
-<Tab title="Go">
-  ```go err := client.ResetPassword(ctx, "reset_token_from_email",
-  "newPassword123") ```
-</Tab>
+  <Tab title="Go">
+    ```go
+    err := client.ResetPassword(ctx, "reset_token_from_email", "newPassword123")
+    if err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
 
-{" "}
-<Tab title="Python">
-  ```python db.auth.reset_password("reset_token_from_email", "newPassword123")
-  ```
-</Tab>
+  <Tab title="Python">
+    ```python
+    db.auth.reset_password("reset_token_from_email", "newPassword123")
+    ```
+  </Tab>
 
   <Tab title="HTTP">
     ```bash
@@ -1352,13 +1371,20 @@ Common authentication errors and how to handle them:
     ```
   </Tab>
 
-{" "}
-<Tab title="Python">
-  ```python try: db.auth.login(email, password) except InvalidCredentialsError:
-  print("Invalid email or password") except TwoFactorRequiredError: print("2FA
-  code required") except UserNotFoundError: print("User not found") except
-  CocobaseError as e: print(f"Authentication error: {e}") ```
-</Tab>
+  <Tab title="Python">
+    ```python
+    try:
+        db.auth.login(email, password)
+    except InvalidCredentialsError:
+        print("Invalid email or password")
+    except TwoFactorRequiredError:
+        print("2FA code required")
+    except UserNotFoundError:
+        print("User not found")
+    except CocobaseError as e:
+        print(f"Authentication error: {e}")
+    ```
+  </Tab>
 
   <Tab title="HTTP">
     HTTP status codes:

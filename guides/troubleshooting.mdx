@@ -23,35 +23,38 @@ Error: API request failed (status: 401)
 1. **Verify API Key is Correct**
 
    <Tabs>
-<Tab title="Flutter">
-```dart
-// Check your API key is correct
-final config = CocobaseConfig(
-  apiKey: "YOUR_API_KEY_HERE",  // Copy from dashboard
-);
-```
-</Tab>
+     <Tab title="Flutter">
+       ```dart
+       // Check your API key is correct
+       final config = CocobaseConfig(
+         apiKey: "YOUR_API_KEY_HERE",  // Copy from dashboard
+       );
+       ```
+     </Tab>
 
-   <Tab title="JavaScript">
-```javascript
-const config = {
-  apiKey: "YOUR_API_KEY_HERE",  // Copy from dashboard
-};
-```
-</Tab>
+     <Tab title="JavaScript">
+       ```javascript
+       const config = {
+         apiKey: "YOUR_API_KEY_HERE",  // Copy from dashboard
+       };
+       ```
+     </Tab>
 
-   <Tab title="Python">
-     ```python # Cloud Functions # Verify API key in dashboard settings ```
-   </Tab>
+     <Tab title="Python">
+       ```python
+       # Cloud Functions
+       # Verify API key in dashboard settings
+       ```
+     </Tab>
 
-   <Tab title="Go">
-```go
-config := cocobase.Config{
-    APIKey: "YOUR_API_KEY_HERE",  // Copy from dashboard
-}
-```
-</Tab>
-</Tabs>
+     <Tab title="Go">
+       ```go
+       config := cocobase.Config{
+           APIKey: "YOUR_API_KEY_HERE",  // Copy from dashboard
+       }
+       ```
+     </Tab>
+   </Tabs>
 
 2. **Check API Key Format**
 
@@ -347,7 +350,7 @@ final page2 = await db.listDocuments("books", filters: {
 
 ## Type Conversion Errors
 
-### Issue: "type '\_InternalLinkedHashMap<String, dynamic>' is not a subtype"
+### Issue: "type '_InternalLinkedHashMap&lt;String, dynamic&gt;' is not a subtype"
 
 **Cause:** Type mismatch in `fromJson()` method
 
@@ -739,20 +742,20 @@ final subtitle = (json['subtitle'] as String?) ?? 'No subtitle';
 
 <Tabs>
 <Tab title="Flutter">
-```dart
-import 'package:dio/dio.dart';
+  ```dart
+  import 'package:dio/dio.dart';
 
-final dio = Dio();
-dio.interceptors.add(
-LogInterceptor(
-requestBody: true,
-responseBody: true,
-requestHeader: true,
-responseHeader: true,
-),
-);
+  final dio = Dio();
+  dio.interceptors.add(
+  LogInterceptor(
+  requestBody: true,
+  responseBody: true,
+  requestHeader: true,
+  responseHeader: true,
+  ),
+  );
 
-````
+```
 </Tab>
 
 <Tab title="JavaScript">
@@ -767,7 +770,7 @@ axios.interceptors.response.use(response => {
   console.log('Response:', response);
   return response;
 });
-````
+```
 
 </Tab>
 

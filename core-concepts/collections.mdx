@@ -353,17 +353,22 @@ Collections are created automatically when you insert the first document:
     ```
   </Tab>
 
-{" "}
-<Tab title="Dart">
-  ```dart final collections = await db.listCollections(); print(collections); //
-  ["users", "posts", "products"] ```
-</Tab>
+  <Tab title="Dart">
+    ```dart
+    final collections = await db.listCollections();
+    print(collections); // ["users", "posts", "products"]
+    ```
+  </Tab>
 
-{" "}
-<Tab title="Go">
-  ```go collections, err := db.ListCollections(ctx) // ["users", "posts",
-  "products"] ```
-</Tab>
+  <Tab title="Go">
+    ```go
+    collections, err := db.ListCollections(ctx)
+    if err != nil {
+        log.Fatal(err)
+    }
+    // collections: ["users", "posts", "products"]
+    ```
+  </Tab>
 
   <Tab title="Python">
     ```python
@@ -387,11 +392,20 @@ Collections are created automatically when you insert the first document:
     ```
   </Tab>
 
-{" "}
-<Tab title="Dart">```dart await db.deleteCollection('old_data'); ```</Tab>
+  <Tab title="Dart">
+    ```dart
+    await db.deleteCollection('old_data');
+    ```
+  </Tab>
 
-{" "}
-<Tab title="Go">```go err := db.DeleteCollection(ctx, "old_data") ```</Tab>
+  <Tab title="Go">
+    ```go
+    err := db.DeleteCollection(ctx, "old_data")
+    if err != nil {
+        log.Fatal(err)
+    }
+    ```
+  </Tab>
 
   <Tab title="Python">
     ```python

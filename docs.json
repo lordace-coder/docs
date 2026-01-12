@@ -8,6 +8,17 @@
     "dark": "#15803D"
   },
   "favicon": "/favicon.ico",
+  "logo": {
+    "light": "/logo/logo.webp",
+    "dark": "/logo/logo.webp"
+  },
+  "navbar": {
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://cocobase.buzz/dashboard"
+    }
+  },
   "navigation": {
     "tabs": [
       {
@@ -15,32 +26,27 @@
         "groups": [
           {
             "group": "Getting Started",
-            "pages": ["index", "getting-started/installation"]
+            "pages": ["index", "guides/getting-started"]
           },
           {
-            "group": "Authentication",
+            "group": "Core Concepts",
             "pages": [
-              "authentication/overview",
-              "authentication/email-password",
-              "authentication/oauth"
+              "core-concepts/authentication",
+              "core-concepts/collections",
+              "core-concepts/data-types"
             ]
           },
           {
-            "group": "Database",
+            "group": "Features",
             "pages": [
-              "database/collections",
-              "database/crud",
-              "database/querying",
-              "database/relationships"
+              "features/crud-operations",
+              "features/querying",
+              "features/realtime",
+              "features/relationships",
+              "features/file-storage",
+              "features/cloud-functions",
+              "features/advanced"
             ]
-          },
-          {
-            "group": "Storage",
-            "pages": ["storage/overview", "storage/upload", "storage/download"]
-          },
-          {
-            "group": "Realtime",
-            "pages": ["realtime/overview"]
           },
           {
             "group": "Cloud Functions",
@@ -52,22 +58,92 @@
             ]
           },
           {
-            "group": "Errors & Limits",
-            "pages": ["errors/handling", "errors/rate-limits"]
+            "group": "SDK Reference",
+            "pages": [
+              "sdk-reference/javascript",
+              "sdk-reference/flutter",
+              "sdk-reference/golang",
+              "sdk-reference/python"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/best-practices",
+              "guides/migrations",
+              "guides/role-based-access",
+              "guides/email-integration",
+              "guides/troubleshooting",
+              "guides/security",
+              "guides/performance"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Examples",
+        "groups": [
+          {
+            "group": "Complete Applications",
+            "pages": [
+              "examples/complete-apps",
+              "examples/todo-app",
+              "examples/ecommerce",
+              "examples/social-media",
+              "examples/chat-app"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Introduction",
+            "pages": [
+              "api-reference/introduction",
+              "api-reference/authentication"
+            ]
+          },
+          {
+            "group": "Collections API",
+            "pages": [
+              "api-reference/collections/create",
+              "api-reference/collections/read",
+              "api-reference/collections/update",
+              "api-reference/collections/delete",
+              "api-reference/collections/query"
+            ]
+          },
+          {
+            "group": "Auth API",
+            "pages": [
+              "api-reference/auth/register",
+              "api-reference/auth/login",
+              "api-reference/auth/logout",
+              "api-reference/auth/profile",
+              "api-reference/auth/oauth"
+            ]
+          },
+          {
+            "group": "Storage API",
+            "pages": [
+              "api-reference/storage/upload",
+              "api-reference/storage/download",
+              "api-reference/storage/delete",
+              "api-reference/storage/list"
+            ]
+          },
+          {
+            "group": "Realtime API",
+            "pages": [
+              "api-reference/realtime/watch",
+              "api-reference/realtime/broadcast",
+              "api-reference/realtime/rooms"
+            ]
           }
         ]
       }
     ]
-  },
-  "logo": {
-    "light": "/logo/logo.webp",
-    "dark": "/logo/logo.webp"
-  },
-  "navbar": {
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://cocobase.buzz/dashboard"
-    }
   }
 }

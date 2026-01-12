@@ -1,0 +1,744 @@
+---
+title: "Email Integration"
+description: "Configure email templates and automation for your Cocobase project"
+icon: "envelope"
+---
+
+# Email Integration
+
+Set up automated emails for user authentication, notifications, and custom workflows in your Cocobase project.
+
+<Note>
+  All email configurations are managed through the Cocobase Dashboard. No code required for setup.
+</Note>
+
+## Overview
+
+Cocobase email features:
+
+- **Transactional emails** - Welcome, verification, password reset
+- **Custom templates** - Design emails with HTML/CSS
+- **Template variables** - Personalize with user data
+- **Email triggers** - Automated sends based on events
+- **SMTP configuration** - Use your own email provider
+- **Email analytics** - Track opens, clicks, deliveries
+
+---
+
+## Default Email Templates
+
+Cocobase provides pre-built templates for common scenarios:
+
+### 1. Welcome Email
+
+Sent when a new user registers:
+- Triggered automatically on registration
+- Includes: username, account details, getting started tips
+- Can be customized in dashboard
+
+### 2. Email Verification
+
+Sent to verify user's email address:
+- Contains verification link
+- Link expires after 24 hours
+- Automatic retry if not verified
+
+### 3. Password Reset
+
+Sent when user requests password reset:
+- Contains secure reset link
+- Link expires after 1 hour
+- One-time use only
+
+### 4. Password Changed
+
+Confirmation when password is successfully changed:
+- Includes timestamp and location
+- Security alert
+
+### 5. Two-Factor Authentication
+
+2FA code delivery:
+- 6-digit verification code
+- Expires after 10 minutes
+
+---
+
+## Email Configuration
+
+### Step 1: Access Email Settings
+
+1. Log in to [Cocobase Dashboard](https://cocobase.buzz)
+2. Select your project
+3. Navigate to **Settings** → **Email Configuration**
+4. View email provider and templates
+
+### Step 2: Choose Email Provider
+
+Cocobase supports multiple email providers:
+
+#### Option 1: Cocobase Email (Default)
+
+- **Free tier**: 100 emails/day
+- **Pro plan**: 10,000 emails/day
+- **No configuration needed**
+- Sent from: `noreply@cocobase.buzz`
+
+#### Option 2: Custom SMTP
+
+Use your own email service:
+
+1. Click **Custom SMTP**
+2. Enter SMTP credentials:
+   - **Host**: smtp.yourprovider.com
+   - **Port**: 587 (or 465 for SSL)
+   - **Username**: Your email or API key
+   - **Password**: Your password or API secret
+   - **From Email**: sender@yourdomain.com
+   - **From Name**: Your App Name
+
+3. Click **Test Connection**
+4. Save settings
+
+**Supported Providers:**
+- SendGrid
+- Mailgun
+- Amazon SES
+- SMTP2GO
+- Gmail (for testing only)
+- Any SMTP server
+
+#### Option 3: Email API Integration
+
+Integrate with email service APIs:
+
+1. Select **API Integration**
+2. Choose provider:
+   - SendGrid
+   - Mailgun
+   - Postmark
+   - Amazon SES
+
+3. Enter API credentials
+4. Configure sending domain
+5. Test and save
+
+---
+
+## Customizing Email Templates
+
+### Step 1: Select Template
+
+1. Email Configuration → **Templates**
+2. Choose template to customize:
+   - Welcome Email
+   - Email Verification
+   - Password Reset
+   - Custom Template
+
+### Step 2: Edit Template
+
+**Subject Line:**
+```
+Welcome to {app_name}, {user_name}!
+```
+
+**HTML Body:**
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .header {
+      background: #4F46E5;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    .button {
+      display: inline-block;
+      background: #4F46E5;
+      color: white;
+      padding: 12px 24px;
+      text-decoration: none;
+      border-radius: 4px;
+      margin: 20px 0;
+    }
+    .footer {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #ddd;
+      color: #666;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Welcome to {app_name}!</h1>
+    </div>
+
+    <div class="content">
+      <p>Hi {user_name},</p>
+
+      <p>Thank you for joining {app_name}! We're excited to have you on board.</p>
+
+      <p>Your account has been successfully created with the email: <strong>{user_email}</strong></p>
+
+      <p>To get started, click the button below:</p>
+
+      <a href="{app_url}" class="button">Get Started</a>
+
+      <p>If you have any questions, feel free to reach out to our support team.</p>
+
+      <p>Best regards,<br>The {app_name} Team</p>
+    </div>
+
+    <div class="footer">
+      <p>You received this email because you signed up for {app_name}.</p>
+      <p>&copy; 2024 {app_name}. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+```
+
+### Step 3: Available Variables
+
+Use these variables in your templates:
+
+**User Variables:**
+- `{user_name}` - User's full name
+- `{user_email}` - User's email address
+- `{user_id}` - User's unique ID
+- `{user_username}` - Username
+- `{user_role}` - User's role
+- Any custom user field: `{user.custom_field}`
+
+**App Variables:**
+- `{app_name}` - Your project name
+- `{app_url}` - Your application URL
+- `{support_email}` - Support email address
+
+**Action Variables:**
+- `{verification_link}` - Email verification URL
+- `{reset_link}` - Password reset URL
+- `{verification_code}` - 2FA or verification code
+- `{magic_link}` - Passwordless login link
+
+**System Variables:**
+- `{current_date}` - Current date
+- `{current_time}` - Current time
+- `{current_year}` - Current year
+
+### Step 4: Preview & Test
+
+1. Click **Preview** to see rendered email
+2. Send test email to yourself
+3. Check inbox and spam folder
+4. Verify links work correctly
+5. Test on mobile and desktop
+6. Save template when satisfied
+
+---
+
+## Custom Email Triggers
+
+Send emails based on custom events and conditions.
+
+### Step 1: Create Trigger
+
+1. Email Configuration → **Triggers**
+2. Click **Create Trigger**
+3. Configure trigger:
+
+**Trigger Name:** Order Confirmation
+
+**Event:** Document Created
+
+**Collection:** orders
+
+**Conditions:**
+```json
+{
+  "status": "completed",
+  "payment_status": "paid"
+}
+```
+
+### Step 2: Configure Email
+
+**Recipient:** `{document.customer_email}`
+
+**Subject:** Order #{document.order_number} Confirmed
+
+**Template:** Select or create custom template
+
+**Template Variables:**
+```json
+{
+  "order_number": "{document.order_number}",
+  "order_total": "{document.total}",
+  "items": "{document.items}",
+  "delivery_date": "{document.delivery_date}"
+}
+```
+
+### Step 3: Test Trigger
+
+1. Click **Test Trigger**
+2. Provide sample document data
+3. Check email delivery
+4. Verify template rendering
+5. Activate trigger
+
+---
+
+## Email Examples
+
+### Welcome Email
+
+```html
+<div class="email">
+  <h1>Welcome to TaskFlow, {user_name}!</h1>
+
+  <p>You're now part of a community of productive people.</p>
+
+  <div class="cta">
+    <a href="{app_url}/onboarding">Complete Your Profile</a>
+  </div>
+
+  <h3>What's Next?</h3>
+  <ul>
+    <li>Create your first project</li>
+    <li>Invite team members</li>
+    <li>Explore templates</li>
+  </ul>
+
+  <p>Need help? Visit our <a href="{app_url}/help">Help Center</a>.</p>
+</div>
+```
+
+### Password Reset
+
+```html
+<div class="email">
+  <h1>Reset Your Password</h1>
+
+  <p>Hi {user_name},</p>
+
+  <p>We received a request to reset your password for {app_name}.</p>
+
+  <div class="cta">
+    <a href="{reset_link}">Reset Password</a>
+  </div>
+
+  <p><strong>This link expires in 1 hour.</strong></p>
+
+  <p>If you didn't request this, please ignore this email. Your password will remain unchanged.</p>
+
+  <div class="security-note">
+    <p>🔒 For security reasons, this link can only be used once.</p>
+  </div>
+</div>
+```
+
+### Order Confirmation
+
+```html
+<div class="email">
+  <h1>Order Confirmed!</h1>
+
+  <p>Hi {user_name},</p>
+
+  <p>Thank you for your order! We've received your payment and are processing your order.</p>
+
+  <div class="order-summary">
+    <h3>Order #{order_number}</h3>
+    <p><strong>Order Date:</strong> {order_date}</p>
+    <p><strong>Total:</strong> ${order_total}</p>
+    <p><strong>Expected Delivery:</strong> {delivery_date}</p>
+  </div>
+
+  <div class="items">
+    <h3>Items Ordered:</h3>
+    {#each items}
+      <div class="item">
+        <p>{item.name} x {item.quantity} - ${item.price}</p>
+      </div>
+    {/each}
+  </div>
+
+  <div class="cta">
+    <a href="{app_url}/orders/{order_id}">Track Order</a>
+  </div>
+</div>
+```
+
+### Weekly Digest
+
+```html
+<div class="email">
+  <h1>Your Weekly Summary</h1>
+
+  <p>Hi {user_name},</p>
+
+  <p>Here's what happened this week:</p>
+
+  <div class="stats">
+    <div class="stat">
+      <h2>{stats.tasks_completed}</h2>
+      <p>Tasks Completed</p>
+    </div>
+    <div class="stat">
+      <h2>{stats.projects_active}</h2>
+      <p>Active Projects</p>
+    </div>
+    <div class="stat">
+      <h2>{stats.team_members}</h2>
+      <p>Team Members</p>
+    </div>
+  </div>
+
+  <h3>Top Projects:</h3>
+  {#each top_projects}
+    <div class="project">
+      <h4>{project.name}</h4>
+      <p>{project.progress}% complete • {project.tasks_done}/{project.tasks_total} tasks</p>
+    </div>
+  {/each}
+
+  <div class="cta">
+    <a href="{app_url}/dashboard">View Dashboard</a>
+  </div>
+</div>
+```
+
+---
+
+## Email Best Practices
+
+<AccordionGroup>
+<Accordion title="Keep It Simple">
+- Use clean, minimal design
+- Focus on one call-to-action
+- Avoid large images (slow loading)
+- Test on mobile devices
+- Use system fonts for better rendering
+</Accordion>
+
+<Accordion title="Personalization">
+```html
+<!-- Good: Personalized -->
+<p>Hi {user_name}, your order #{order_number} has been shipped!</p>
+
+<!-- Bad: Generic -->
+<p>Your order has been shipped.</p>
+```
+
+Use user data to make emails relevant and engaging.
+</Accordion>
+
+<Accordion title="Clear Call-to-Action">
+```html
+<!-- Good: Clear CTA -->
+<a href="{verification_link}" class="button">
+  Verify Email Address
+</a>
+
+<!-- Bad: Unclear -->
+<p>Click <a href="{verification_link}">here</a> to continue.</p>
+```
+</Accordion>
+
+<Accordion title="Mobile-Responsive">
+```css
+/* Mobile-friendly styles */
+@media only screen and (max-width: 600px) {
+  .container {
+    width: 100% !important;
+    padding: 10px !important;
+  }
+  .button {
+    display: block !important;
+    width: 100% !important;
+  }
+  h1 {
+    font-size: 24px !important;
+  }
+}
+```
+</Accordion>
+
+<Accordion title="Test Before Sending">
+1. Send test emails to yourself
+2. Check on different email clients:
+   - Gmail
+   - Outlook
+   - Apple Mail
+   - Mobile apps
+3. Verify all links work
+4. Check spam score
+5. Review on mobile
+</Accordion>
+
+<Accordion title="Avoid Spam Triggers">
+Don't use:
+- ALL CAPS IN SUBJECT LINES
+- Excessive exclamation marks!!!
+- Spam trigger words (FREE, WINNER, ACT NOW)
+- Suspicious links
+- Large attachments
+
+Do:
+- Use clear subject lines
+- Include unsubscribe link
+- Authenticate your domain
+- Maintain clean email list
+</Accordion>
+</AccordionGroup>
+
+---
+
+## Programmatic Email Sending
+
+While most emails are triggered automatically, you can also send custom emails from your code.
+
+<Tabs>
+<Tab title="JavaScript">
+```javascript
+import { Cocobase } from 'cocobase';
+
+const db = new Cocobase({ apiKey: 'your-api-key' });
+
+// Send custom email
+await db.email.send({
+  to: 'user@example.com',
+  subject: 'Your Report is Ready',
+  template: 'report-ready',
+  variables: {
+    user_name: 'John',
+    report_name: 'Monthly Analytics',
+    report_url: 'https://app.example.com/reports/123'
+  }
+});
+```
+</Tab>
+
+<Tab title="TypeScript">
+```typescript
+interface EmailVariables {
+  user_name: string;
+  report_name: string;
+  report_url: string;
+}
+
+await db.email.send<EmailVariables>({
+  to: 'user@example.com',
+  subject: 'Your Report is Ready',
+  template: 'report-ready',
+  variables: {
+    user_name: 'John',
+    report_name: 'Monthly Analytics',
+    report_url: 'https://app.example.com/reports/123'
+  }
+});
+```
+</Tab>
+
+<Tab title="Dart">
+```dart
+await db.email.send(
+  to: 'user@example.com',
+  subject: 'Your Report is Ready',
+  template: 'report-ready',
+  variables: {
+    'user_name': 'John',
+    'report_name': 'Monthly Analytics',
+    'report_url': 'https://app.example.com/reports/123'
+  }
+);
+```
+</Tab>
+
+<Tab title="Python">
+```python
+db.email.send(
+    to='user@example.com',
+    subject='Your Report is Ready',
+    template='report-ready',
+    variables={
+        'user_name': 'John',
+        'report_name': 'Monthly Analytics',
+        'report_url': 'https://app.example.com/reports/123'
+    }
+)
+```
+</Tab>
+</Tabs>
+
+---
+
+## Email Analytics
+
+Track email performance in the dashboard.
+
+### Available Metrics
+
+1. **Delivery Rate**
+   - Total emails sent
+   - Successfully delivered
+   - Bounced emails
+   - Failed deliveries
+
+2. **Engagement**
+   - Open rate
+   - Click-through rate
+   - Time to first open
+   - Device/client breakdown
+
+3. **Issues**
+   - Bounce rate (hard/soft)
+   - Spam complaints
+   - Unsubscribes
+   - Blocked emails
+
+### Viewing Analytics
+
+1. Dashboard → Email → Analytics
+2. Select date range
+3. Filter by template
+4. View detailed reports
+5. Export data (CSV)
+
+### Improving Deliverability
+
+**If open rates are low:**
+- Improve subject lines
+- Send at better times
+- Segment your audience
+- A/B test templates
+
+**If bounce rate is high:**
+- Clean email list
+- Remove invalid addresses
+- Verify email domains
+- Check SMTP configuration
+
+**If marked as spam:**
+- Add unsubscribe link
+- Authenticate domain (SPF/DKIM)
+- Reduce send frequency
+- Improve email content
+
+---
+
+## Domain Authentication
+
+Improve email deliverability by authenticating your domain.
+
+### Step 1: Add DNS Records
+
+1. Dashboard → Email → Domain Authentication
+2. Click **Authenticate Domain**
+3. Enter your domain: `yourdomain.com`
+4. Copy provided DNS records:
+
+**SPF Record:**
+```
+Type: TXT
+Name: @
+Value: v=spf1 include:cocobase.buzz ~all
+```
+
+**DKIM Record:**
+```
+Type: TXT
+Name: cocobase._domainkey
+Value: [provided by Cocobase]
+```
+
+**DMARC Record:**
+```
+Type: TXT
+Name: _dmarc
+Value: v=DMARC1; p=none; rua=mailto:dmarc@yourdomain.com
+```
+
+### Step 2: Add Records to DNS Provider
+
+1. Log in to your DNS provider (Cloudflare, Namecheap, etc.)
+2. Add the records exactly as shown
+3. Wait for DNS propagation (up to 48 hours)
+
+### Step 3: Verify
+
+1. Return to Cocobase dashboard
+2. Click **Verify Domain**
+3. Wait for confirmation
+4. Start sending authenticated emails
+
+---
+
+## Troubleshooting
+
+### Emails Not Being Received
+
+**Check:**
+1. Spam/junk folder
+2. Email configuration in dashboard
+3. SMTP credentials are correct
+4. Email provider status
+5. Recipient email is valid
+
+### Links Not Working
+
+**Solutions:**
+1. Verify variable syntax: `{verification_link}`
+2. Check template preview
+3. Test with real data
+4. Ensure app URL is configured correctly
+
+### Template Not Rendering
+
+**Common Issues:**
+1. Invalid HTML syntax
+2. Missing closing tags
+3. Undefined variables
+4. CSS compatibility issues
+
+**Solutions:**
+- Use HTML validator
+- Test template preview
+- Check all variables are defined
+- Use inline CSS
+
+---
+
+## Next Steps
+
+<CardGroup cols="2">
+  <Card title="Authentication" icon="lock" href="/core-concepts/authentication">
+    Set up user authentication
+  </Card>
+  <Card title="Role-Based Access" icon="shield" href="/guides/role-based-access">
+    Configure user roles and permissions
+  </Card>
+  <Card title="Cloud Functions" icon="bolt" href="/cloud-functions/introduction">
+    Automate workflows with functions
+  </Card>
+  <Card title="Best Practices" icon="star" href="/guides/best-practices">
+    Learn optimization tips
+  </Card>
+</CardGroup>

@@ -1,0 +1,589 @@
+---
+title: "Role-Based Access Control"
+description: "Configure user roles and permissions in your Cocobase project"
+icon: "shield"
+---
+
+# Role-Based Access Control
+
+Set up roles and permissions to control who can access and modify data in your Cocobase project.
+
+<Note>
+  All role and permission configurations are managed through the Cocobase Dashboard. No code changes required.
+</Note>
+
+## Overview
+
+Cocobase RBAC features:
+
+- **Predefined roles** - Admin, Editor, Viewer, and custom roles
+- **Collection-level permissions** - Control access per collection
+- **Field-level permissions** - Hide sensitive fields from specific roles
+- **User assignment** - Assign roles to users in the dashboard
+- **API enforcement** - Permissions automatically enforced by SDKs
+- **Custom roles** - Create unlimited custom roles
+
+---
+
+## Default Roles
+
+Cocobase comes with three predefined roles:
+
+### Admin
+
+Full access to everything:
+- ✅ Create, read, update, delete all documents
+- ✅ Access all collections
+- ✅ Manage users and roles
+- ✅ Configure project settings
+- ✅ View analytics and logs
+
+### Editor
+
+Can manage content but not configuration:
+- ✅ Create, read, update, delete documents
+- ✅ Access assigned collections
+- ❌ Cannot manage users or roles
+- ❌ Cannot change project settings
+- ✅ View basic analytics
+
+### Viewer
+
+Read-only access:
+- ❌ Cannot create, update, or delete
+- ✅ Read documents
+- ✅ Access assigned collections
+- ❌ Cannot manage users
+- ❌ Cannot change settings
+
+---
+
+## Setting Up Roles
+
+### Step 1: Access Role Management
+
+1. Log in to [Cocobase Dashboard](https://cocobase.buzz)
+2. Select your project
+3. Navigate to **Settings** → **Roles & Permissions**
+4. View existing roles and permissions
+
+### Step 2: Create Custom Role
+
+1. Click **Create Role**
+2. Enter role details:
+   - **Name**: e.g., "Content Manager", "Customer Support"
+   - **Description**: What this role can do
+   - **Role Key**: Lowercase identifier (e.g., "content_manager")
+
+3. Click **Create**
+
+### Step 3: Configure Permissions
+
+For each collection, set permissions:
+
+#### Collection Access
+
+| Permission | Description |
+|-----------|-------------|
+| **No Access** | Cannot see collection at all |
+| **Read Only** | Can view documents |
+| **Read & Write** | Can create and edit documents |
+| **Full Access** | Can create, edit, and delete documents |
+
+#### Document Ownership
+
+- **Own Documents Only**: Users can only access documents they created
+- **All Documents**: Users can access any document in the collection
+- **Filtered Access**: Custom filters based on document fields
+
+#### Field-Level Permissions
+
+Hide sensitive fields from specific roles:
+
+1. Select collection
+2. Click **Field Permissions**
+3. For each field, choose visibility:
+   - **Visible**: Field is included in responses
+   - **Hidden**: Field is excluded from responses
+   - **Write Only**: Can set but not read (e.g., passwords)
+
+### Step 4: Assign Roles to Users
+
+1. Go to **Users** in the dashboard
+2. Select a user
+3. Click **Assign Role**
+4. Choose role(s)
+5. Save changes
+
+<Note>
+Users can have multiple roles. Permissions are combined (most permissive wins).
+</Note>
+
+---
+
+## Permission Examples
+
+### Example 1: Blog Platform
+
+**Roles:**
+- **Admin**: Full access
+- **Author**: Can create and edit own posts
+- **Moderator**: Can edit any post, manage comments
+- **Reader**: Read-only access to published posts
+
+**Configuration:**
+
+| Collection | Admin | Author | Moderator | Reader |
+|-----------|-------|--------|-----------|--------|
+| posts | Full Access | Own Documents (Read/Write) | All Documents (Read/Write) | Read Only (status=published) |
+| comments | Full Access | Own Documents (Read/Write) | All Documents (Full Access) | Read Only |
+| users | Full Access | Own Profile Only | Read Only | No Access |
+| categories | Full Access | Read Only | Read Only | Read Only |
+
+### Example 2: E-commerce Store
+
+**Roles:**
+- **Admin**: Full access to everything
+- **Store Manager**: Manage products, orders, inventory
+- **Customer Support**: View orders, update order status, manage customer inquiries
+- **Customer**: View products, manage own orders and profile
+
+**Configuration:**
+
+| Collection | Admin | Store Manager | Support | Customer |
+|-----------|-------|---------------|---------|----------|
+| products | Full Access | Full Access | Read Only | Read Only |
+| orders | Full Access | Full Access | Read & Update (own) | Own Documents (Read Only) |
+| customers | Full Access | Read Only | Read & Update | Own Profile Only |
+| inventory | Full Access | Read & Write | No Access | No Access |
+| payments | Full Access | No Access | No Access | Own Documents (Read Only) |
+
+**Field Visibility:**
+
+Orders collection:
+- Customer role cannot see: `cost_price`, `supplier_id`, `profit_margin`
+- Support role cannot see: `cost_price`, `profit_margin`
+
+### Example 3: SaaS Application
+
+**Roles:**
+- **Workspace Owner**: Full access to workspace data
+- **Workspace Admin**: Manage team members, most data
+- **Team Member**: Access assigned projects
+- **Guest**: Limited read-only access
+
+**Configuration:**
+
+| Collection | Owner | Admin | Member | Guest |
+|-----------|-------|-------|--------|-------|
+| projects | Full Access | Full Access | Assigned Projects | Assigned Projects (Read Only) |
+| tasks | Full Access | Full Access | Assigned Tasks | Assigned Tasks (Read Only) |
+| team_members | Full Access | Read & Write | Read Only | Read Only |
+| billing | Full Access | Read Only | No Access | No Access |
+| api_keys | Full Access | No Access | No Access | No Access |
+
+---
+
+## Using Roles in Your Application
+
+### Check User Role
+
+<Tabs>
+<Tab title="JavaScript">
+```javascript
+import { Cocobase } from 'cocobase';
+
+const db = new Cocobase({ apiKey: 'your-api-key' });
+
+// Get current user with role
+const user = await db.auth.getUser();
+console.log('User role:', user.role);
+
+// Check if user has specific role
+if (user.role === 'admin') {
+  // Show admin features
+}
+
+// Check multiple roles
+if (['admin', 'editor'].includes(user.role)) {
+  // Show content management features
+}
+```
+</Tab>
+
+<Tab title="TypeScript">
+```typescript
+import { Cocobase } from 'cocobase';
+
+const db = new Cocobase({ apiKey: 'your-api-key' });
+
+interface User {
+  id: string;
+  email: string;
+  role: 'admin' | 'editor' | 'viewer' | 'custom';
+  roles?: string[]; // If multiple roles
+}
+
+const user = await db.auth.getUser() as User;
+
+// Type-safe role check
+const isAdmin = user.role === 'admin';
+const canEdit = ['admin', 'editor'].includes(user.role);
+```
+</Tab>
+
+<Tab title="Dart">
+```dart
+import 'package:cocobase_flutter/cocobase_flutter.dart';
+
+final db = Cocobase(CocobaseConfig(apiKey: 'your-api-key'));
+
+// Get user role
+final user = await db.auth.getUser();
+print('User role: ${user.role}');
+
+// Check role
+if (user.role == 'admin') {
+  // Show admin UI
+}
+
+// Check multiple roles
+final canManageContent = ['admin', 'editor'].contains(user.role);
+```
+</Tab>
+
+<Tab title="Python">
+```python
+from cocobase import Cocobase
+
+db = Cocobase(api_key='your-api-key')
+
+# Get user role
+user = db.auth.get_user()
+print(f"User role: {user['role']}")
+
+# Check role
+if user['role'] == 'admin':
+    # Admin functionality
+    pass
+
+# Check multiple roles
+can_edit = user['role'] in ['admin', 'editor']
+```
+</Tab>
+</Tabs>
+
+### Permissions Are Enforced Automatically
+
+The SDK automatically enforces permissions based on the authenticated user's role:
+
+```typescript
+// User with "viewer" role
+const db = new Cocobase({ apiKey: 'your-api-key' });
+await db.auth.login('viewer@example.com', 'password');
+
+// This works - viewers can read
+const posts = await db.listDocuments('posts');
+
+// This fails - viewers cannot write
+try {
+  await db.createDocument('posts', { title: 'New Post' });
+} catch (error) {
+  console.error('Permission denied:', error.message);
+  // Error: Insufficient permissions. Required: write. Current role: viewer
+}
+```
+
+### Role-Based UI
+
+Show/hide UI elements based on user role:
+
+```tsx
+import React, { useEffect, useState } from 'react';
+import { Cocobase } from 'cocobase';
+
+const db = new Cocobase({ apiKey: 'your-api-key' });
+
+function Dashboard() {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    async function fetchUser() {
+      const currentUser = await db.auth.getUser();
+      setUser(currentUser);
+    }
+    fetchUser();
+  }, []);
+
+  if (!user) return <div>Loading...</div>;
+
+  return (
+    <div>
+      <h1>Dashboard</h1>
+      <p>Welcome, {user.email}!</p>
+
+      {/* Show for all authenticated users */}
+      <div>
+        <h2>Your Content</h2>
+        {/* List user's documents */}
+      </div>
+
+      {/* Show only for editors and admins */}
+      {['admin', 'editor'].includes(user.role) && (
+        <div>
+          <h2>Content Management</h2>
+          <button>Create New Post</button>
+          <button>Edit Posts</button>
+        </div>
+      )}
+
+      {/* Show only for admins */}
+      {user.role === 'admin' && (
+        <div>
+          <h2>Admin Panel</h2>
+          <button>Manage Users</button>
+          <button>View Analytics</button>
+          <button>Project Settings</button>
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+---
+
+## Document Ownership
+
+Configure who can access documents based on ownership.
+
+### Setting Document Owner
+
+Documents automatically track the creator:
+
+```typescript
+// User creates a document
+await db.auth.login('user@example.com', 'password');
+
+const post = await db.createDocument('posts', {
+  title: 'My Post',
+  content: 'Hello world'
+});
+
+// Document automatically includes:
+// {
+//   id: '...',
+//   createdBy: 'user-id',
+//   data: { title: 'My Post', content: 'Hello world' }
+// }
+```
+
+### Own Documents Permission
+
+In the dashboard, set collection permission to **Own Documents Only**:
+
+1. Settings → Roles & Permissions
+2. Select role (e.g., "Author")
+3. For "posts" collection, choose **Own Documents Only**
+4. Save
+
+Now users with "Author" role can only access documents they created:
+
+```typescript
+// Author user logs in
+await db.auth.login('author@example.com', 'password');
+
+// Can see only their own posts
+const myPosts = await db.listDocuments('posts');
+// Returns only posts where createdBy === current user ID
+
+// Cannot access other users' posts
+try {
+  await db.getDocument('posts', 'someone-elses-post-id');
+} catch (error) {
+  // Error: Document not found (or permission denied)
+}
+```
+
+---
+
+## Custom Permission Filters
+
+Create advanced permission rules using custom filters.
+
+### Dashboard Configuration
+
+1. Settings → Roles & Permissions
+2. Select role
+3. For collection, choose **Custom Filter**
+4. Define filter rules:
+
+**Example: Users can only see documents from their organization**
+
+```json
+{
+  "organizationId": "{user.organizationId}"
+}
+```
+
+**Example: Users can see published documents or their own drafts**
+
+```json
+{
+  "$or": [
+    { "status": "published" },
+    { "createdBy": "{user.id}", "status": "draft" }
+  ]
+}
+```
+
+**Example: Regional managers see documents from their region**
+
+```json
+{
+  "region": "{user.region}"
+}
+```
+
+### Variables Available
+
+- `{user.id}` - Current user's ID
+- `{user.email}` - Current user's email
+- `{user.role}` - Current user's role
+- `{user.*}` - Any custom user field
+
+---
+
+## Best Practices
+
+<AccordionGroup>
+<Accordion title="Use Least Privilege Principle">
+Give users the minimum permissions needed:
+
+- Start with most restrictive role
+- Add permissions as needed
+- Regularly audit role assignments
+- Remove unnecessary permissions
+</Accordion>
+
+<Accordion title="Create Role Hierarchy">
+Organize roles from most to least privileged:
+
+1. Owner / Super Admin
+2. Admin
+3. Manager
+4. Editor / Contributor
+5. Viewer / Guest
+
+Higher roles inherit lower role permissions.
+</Accordion>
+
+<Accordion title="Document Your Roles">
+Maintain clear documentation:
+
+```markdown
+## Role Definitions
+
+### Admin
+- Can manage users and settings
+- Full access to all collections
+- Assigned to: Core team members
+
+### Content Manager
+- Can create and edit all content
+- Cannot delete or manage users
+- Assigned to: Content team
+
+### Viewer
+- Read-only access to public content
+- Cannot modify anything
+- Assigned to: Clients, stakeholders
+```
+</Accordion>
+
+<Accordion title="Test Permission Changes">
+Before deploying role changes:
+
+1. Create test users for each role
+2. Test all CRUD operations
+3. Verify field visibility
+4. Test edge cases
+5. Document expected behavior
+</Accordion>
+
+<Accordion title="Handle Permission Errors Gracefully">
+```typescript
+try {
+  await db.createDocument('posts', data);
+} catch (error) {
+  if (error.code === 'PERMISSION_DENIED') {
+    alert('You do not have permission to create posts. Please contact your administrator.');
+  } else {
+    alert('An error occurred. Please try again.');
+  }
+}
+```
+</Accordion>
+</AccordionGroup>
+
+---
+
+## Troubleshooting
+
+### User Cannot Access Collection
+
+**Problem**: User gets "Permission Denied" error
+
+**Solutions**:
+1. Check user's role assignment in dashboard
+2. Verify role has permission for that collection
+3. Check custom filters aren't blocking access
+4. Ensure user is authenticated
+
+### Field Not Appearing in Response
+
+**Problem**: Expected field is missing from document
+
+**Solutions**:
+1. Check field-level permissions for user's role
+2. Verify field exists in document
+3. Check if field is marked as "Hidden" for this role
+
+### User Can Access Too Much
+
+**Problem**: User can see data they shouldn't
+
+**Solutions**:
+1. Review role permissions
+2. Enable "Own Documents Only" if appropriate
+3. Add custom permission filters
+4. Verify role assignment is correct
+
+### Permission Changes Not Applied
+
+**Problem**: Role changes don't take effect
+
+**Solutions**:
+1. User needs to log out and log back in
+2. Clear SDK cache: `db.auth.refreshToken()`
+3. Wait a few seconds for propagation
+4. Check dashboard for save confirmation
+
+---
+
+## Next Steps
+
+<CardGroup cols="2">
+  <Card title="Authentication" icon="lock" href="/core-concepts/authentication">
+    Learn about user authentication
+  </Card>
+  <Card title="Email Integration" icon="envelope" href="/guides/email-integration">
+    Set up email templates and notifications
+  </Card>
+  <Card title="Migrations" icon="database" href="/guides/migrations">
+    Import data from other databases
+  </Card>
+  <Card title="Best Practices" icon="star" href="/guides/best-practices">
+    Security and optimization tips
+  </Card>
+</CardGroup>

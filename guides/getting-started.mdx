@@ -53,13 +53,17 @@ Choose your language and install the Cocobase SDK:
 
   </Tab>
 
-{" "}
+  <Tab title="Go">
+    ```bash
+    go get github.com/cocobase-team/cocobase-go
+    ```
+  </Tab>
 
-<Tab title="Go">```bash go get github.com/cocobase-team/cocobase-go ```</Tab>
-
-{" "}
-
-<Tab title="Python">```bash pip install cocobase ```</Tab>
+  <Tab title="Python">
+    ```bash
+    pip install cocobase
+    ```
+  </Tab>
 
   <Tab title="HTTP">
     No installation required! Use any HTTP client or tool like cURL, Postman, or your favorite request library.
@@ -486,7 +490,7 @@ For security, always use environment variables for your API key:
 
 Now that you've made your first request, explore these features:
 
-<CardGroup cols={2}>
+<CardGroup cols="2">
   <Card title="Authentication" icon="lock" href="/core-concepts/authentication">
     Add user registration and login to your app
   </Card>
@@ -508,11 +512,9 @@ Now that you've made your first request, explore these features:
     Make sure your API key is correct and active. You can find it in your [Cocobase dashboard](https://cocobase.buzz/dashboard).
   </Accordion>
 
-{" "}
-
-<Accordion title="CORS Error in Browser">
-  Add your domain to the allowed origins in your Cocobase project settings.
-</Accordion>
+  <Accordion title="CORS Error in Browser">
+    Add your domain to the allowed origins in your Cocobase project settings.
+  </Accordion>
 
   <Accordion title="TypeScript Types Not Working">
     Make sure you're using TypeScript 4.5+ and have `@types/node` installed.
