@@ -15,20 +15,23 @@ Cocobase provides a complete authentication system with user registration, login
     ```typescript
     import { Cocobase } from "cocobase";
 
-    const db = new Cocobase({ apiKey: "YOUR_API_KEY" });
+    const db = new Cocobase({ 
+      apiKey: "YOUR_API_KEY",
+      projectId: "YOUR_PROJECT_ID" // Optional
+       });
 
     // Register a new user
-    const user = await db.auth.register(
-      "user@example.com",
-      "securePassword123",
-      {
-        full_name: "Alice Johnson",
-        role: "developer"
-      }
-    );
+    const user = await db.auth.register({
+  email: "user@example.com",
+  password: "securePassword123",
+  data: { full_name: "Alice Johnson" }
+});
 
     // Login
-    const session = await db.auth.login("user@example.com", "securePassword123");
+const result = await db.auth.login({
+  email: "alice@example.com",
+  password: "SecurePass123!"
+});
     ```
 
   </Tab>
@@ -97,7 +100,7 @@ Cocobase provides a complete authentication system with user registration, login
   <Tab title="HTTP">
     ```bash
     # Register
-    curl -X POST https://api.cocobase.buzz/auth/register \
+    curl -X POST https://api.cocobase.buzz/auth-collections/signup \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -110,7 +113,7 @@ Cocobase provides a complete authentication system with user registration, login
       }'
 
     # Login
-    curl -X POST https://api.cocobase.buzz/auth/login \
+    curl -X POST https://api.cocobase.buzz/auth-collections/login \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -129,27 +132,32 @@ Create new user accounts with email and password:
 <Tabs>
   <Tab title="JavaScript">
     ```typescript
-    // Basic registration
-    const user = await db.auth.register(
-      "alice@example.com",
-      "SecurePass123!"
-    );
 
-    // With additional user data
-    const userWithData = await db.auth.register(
-      "bob@example.com",
-      "SecurePass123!",
-      {
-        full_name: "Bob Smith",
-        age: 25,
-        role: "admin",
-        preferences: {
-          theme: "dark",
-          notifications: true
-        }
-      }
-    );
-    ```
+// Basic registration
+const result = await db.auth.register({
+  email: "alice@example.com",
+  password: "SecurePass123!"
+});
+
+if (!result.requires_2fa) {
+  console.log("Registered user:", result.user);
+}
+
+// With additional user data
+const userWithData = await db.auth.register({
+  email: "bob@example.com",
+  password: "SecurePass123!",
+  data: {
+    full_name: "Bob Smith",
+    age: 25,
+    role: "admin",
+    preferences: {
+      theme: "dark",
+      notifications: true
+    }
+  }
+});
+   ```
 
     **Response:**
     ```json
@@ -245,23 +253,24 @@ Create new user accounts with email and password:
 
   <Tab title="HTTP">
     ```bash
-    curl -X POST https://api.cocobase.buzz/auth/register \
-      -H "Authorization: Bearer YOUR_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "email": "bob@example.com",
-        "password": "SecurePass123!",
-        "data": {
-          "full_name": "Bob Smith",
-          "age": 25,
-          "role": "admin",
-          "preferences": {
-            "theme": "dark",
-            "notifications": true
-          }
-        }
-      }'
-    ```
+
+curl -X POST https://api.cocobase.buzz/auth-collections/signup \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "bob@example.com",
+    "password": "SecurePass123!",
+    "data": {
+      "full_name": "Bob Smith",
+      "age": 25,
+      "role": "admin",
+      "preferences": {
+        "theme": "dark",
+        "notifications": true
+      }
+    }
+  }'
+   ```
   </Tab>
 </Tabs>
 
@@ -277,29 +286,32 @@ Authenticate users and get access tokens:
 <Tabs>
   <Tab title="JavaScript">
     ```typescript
-    // Login
-    const session = await db.auth.login(
-      "alice@example.com",
-      "SecurePass123!"
-    );
 
-    console.log("Token:", session.token);
-    console.log("User:", session.user);
+const result = await db.auth.login({
+  email: "alice@example.com",
+  password: "SecurePass123!"
+});
 
-    // The token is automatically stored and used for future requests
-    ```
+if (result.requires_2fa) {
+  console.log("2FA required:", result.message);
+} else {
+  console.log("Logged in user:", result.user);
+}
+
+// Token is automatically stored internally
+   ```
 
     **With automatic token persistence:**
     ```typescript
     // Token is automatically saved to localStorage
-    await db.auth.login("alice@example.com", "SecurePass123!");
 
-    // On page reload, check if user is still logged in
-    const currentUser = db.auth.getCurrentUser();
-    if (currentUser) {
-      console.log("User is logged in:", currentUser);
-    }
-    ```
+await db.auth.initAuth();
+
+if (db.auth.isAuthenticated()) {
+  const currentUser = await db.auth.getCurrentUser();
+  console.log("User is logged in:", currentUser);
+}
+   ```
 
   </Tab>
 
@@ -357,26 +369,17 @@ Authenticate users and get access tokens:
 
   <Tab title="HTTP">
     ```bash
-    curl -X POST https://api.cocobase.buzz/auth/login \
-      -H "Authorization: Bearer YOUR_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "email": "alice@example.com",
-        "password": "SecurePass123!"
-      }'
-    ```
 
-    **Response:**
-    ```json
-    {
-      "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-      "user": {
-        "id": "user_123abc",
-        "email": "alice@example.com",
-        "data": { ... }
-      }
-    }
-    ```
+curl -X POST https://api.cocobase.buzz/auth-collections/login \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "alice@example.com",
+    "password": "SecurePass123!"
+  }'
+   ```
+
+   ```
 
     **Use the token in subsequent requests:**
     ```bash
@@ -394,19 +397,17 @@ Retrieve the currently authenticated user:
 <Tabs>
   <Tab title="JavaScript">
     ```typescript
-    // Get current user (from stored token)
-    const user = db.auth.getCurrentUser();
 
-    if (user) {
-      console.log("Logged in as:", user.email);
-      console.log("User data:", user.data);
-    } else {
-      console.log("No user logged in");
-    }
+await db.auth.initAuth();
 
-    // Fetch fresh user data from server
-    const freshUser = await db.auth.fetchCurrentUser();
-    ```
+if (db.auth.isAuthenticated()) {
+  const user = await db.auth.getCurrentUser();
+  console.log("Logged in as:", user.email);
+  console.log("User data:", user.data);
+} else {
+  console.log("No user logged in");
+}
+   ```
 
   </Tab>
 
@@ -456,7 +457,7 @@ Retrieve the currently authenticated user:
 
   <Tab title="HTTP">
     ```bash
-    curl -X GET https://api.cocobase.buzz/auth/me \
+    curl -X GET https://api.cocobase.buzz/auth-collections/me \
       -H "Authorization: Bearer YOUR_USER_TOKEN"
     ```
   </Tab>
@@ -469,19 +470,21 @@ Update user data after authentication:
 <Tabs>
   <Tab title="JavaScript">
     ```typescript
-    // Update user profile
-    const updatedUser = await db.auth.updateProfile({
-      full_name: "Alice Johnson Smith",
-      bio: "Full-stack developer",
-      avatar: "https://example.com/avatar.jpg",
-      preferences: {
-        theme: "dark",
-        language: "en"
-      }
-    });
+   
+const updatedUser = await db.auth.updateUser({
+  data: {
+    full_name: "Alice Johnson Smith",
+    bio: "Full-stack developer",
+    avatar: "https://example.com/avatar.jpg",
+    preferences: {
+      theme: "dark",
+      language: "en"
+    }
+  }
+});
 
-    console.log("Updated user:", updatedUser);
-    ```
+console.log("Updated user:", updatedUser);
+ ```
 
   </Tab>
 
@@ -535,17 +538,18 @@ Update user data after authentication:
 
   <Tab title="HTTP">
     ```bash
-    curl -X PATCH https://api.cocobase.buzz/auth/me \
-      -H "Authorization: Bearer YOUR_USER_TOKEN" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "data": {
-          "full_name": "Alice Johnson Smith",
-          "bio": "Full-stack developer",
-          "avatar": "https://example.com/avatar.jpg"
-        }
-      }'
-    ```
+
+curl -X PATCH https://api.cocobase.buzz/auth-collections/user \
+  -H "Authorization: Bearer YOUR_USER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "data": {
+      "full_name": "Alice Johnson Smith",
+      "bio": "Full-stack developer",
+      "avatar": "https://example.com/avatar.jpg"
+    }
+  }'
+   ```
   </Tab>
 </Tabs>
 
@@ -605,9 +609,10 @@ End the user session:
 
   <Tab title="HTTP">
     ```bash
-    curl -X POST https://api.cocobase.buzz/auth/logout \
-      -H "Authorization: Bearer YOUR_USER_TOKEN"
-    ```
+
+curl -X POST https://api.cocobase.buzz/auth-collections/logout \
+  -H "Authorization: Bearer YOUR_USER_TOKEN"
+   ```
   </Tab>
 </Tabs>
 
@@ -756,7 +761,7 @@ Authenticate users with Google, GitHub, and other OAuth providers:
 <Tabs>
   <Tab title="JavaScript">
     ```typescript
-    // Initiate Google OAuth flow
+{/**    // Initiate Google OAuth flow
     const authUrl = await db.auth.getOAuthUrl("google", {
       redirectUrl: "https://yourapp.com/auth/callback",
       scopes: ["email", "profile"]
@@ -771,8 +776,17 @@ Authenticate users with Google, GitHub, and other OAuth providers:
 
     // Exchange code for token
     const session = await db.auth.handleOAuthCallback("google", code);
-    console.log("User logged in:", session.user);
-    ```
+    console.log("User logged in:", session.user); **/}
+    Web - Using Google Identity Services
+   * google.accounts.id.initialize({
+   *   client_id: 'YOUR_GOOGLE_CLIENT_ID',
+   *   callback: async (response) => {
+   *     const user = await db.auth.loginWithGoogle(response.credential, 'web');
+   *     console.log('Logged in:', user.email);
+   *   }
+   * });
+
+    ``` 
 
   </Tab>
 
@@ -944,19 +958,24 @@ Authenticate users with Google, GitHub, and other OAuth providers:
 <Tabs>
   <Tab title="JavaScript">
     ```typescript
-    try {
-      // First attempt login
-      await db.auth.login("user@example.com", "password123");
-    } catch (error) {
-      if (error.code === "2FA_REQUIRED") {
-        // Prompt user for 2FA code
-        const code = prompt("Enter 2FA code:");
 
-        // Complete login with 2FA
-        await db.auth.verify2FALogin(code);
-      }
-    }
-    ```
+// First attempt login
+const result = await db.auth.login({
+  email: "user@example.com",
+  password: "password123"
+});
+
+if (result.requires_2fa) {
+  const code = prompt("Enter 2FA code:");
+
+  await db.auth.verify2FALogin({
+    email: "user@example.com",
+    code
+  });
+
+  console.log("2FA login successful");
+}
+   ```
 
   </Tab>
 
@@ -1012,23 +1031,25 @@ Authenticate users with Google, GitHub, and other OAuth providers:
 
   <Tab title="HTTP">
     ```bash
-    # Login returns 2FA_REQUIRED error
-    curl -X POST https://api.cocobase.buzz/auth/login \
-      -H "Authorization: Bearer YOUR_API_KEY" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "email": "user@example.com",
-        "password": "password123"
-      }'
 
-    # Complete login with 2FA
-    curl -X POST https://api.cocobase.buzz/auth/2fa/verify-login \
-      -H "Authorization: Bearer TEMP_TOKEN_FROM_LOGIN" \
-      -H "Content-Type: application/json" \
-      -d '{
-        "code": "123456"
-      }'
-    ```
+# Login
+curl -X POST https://api.cocobase.buzz/auth-collections/login \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "password123"
+  }'
+
+# Complete 2FA login
+curl -X POST https://api.cocobase.buzz/auth-collections/verify-2fa-login \
+  -H "x-api-key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "code": "123456"
+  }'
+   ```
 
   </Tab>
 </Tabs>
@@ -1040,25 +1061,25 @@ Manage user roles and permissions:
 <Tabs>
   <Tab title="JavaScript">
     ```typescript
-    // Register user with role
-    const admin = await db.auth.register(
-      "admin@example.com",
-      "password123",
-      {
-        full_name: "Admin User",
-        role: "admin"
-      }
-    );
 
-    // Check user role
-    const currentUser = db.auth.getCurrentUser();
-    if (currentUser.data.role === "admin") {
-      // Show admin features
-    }
+const admin = await db.auth.register({
+  email: "admin@example.com",
+  password: "password123",
+  data: {
+    full_name: "Admin User",
+    role: "admin"
+  }
+});
 
-    // Update user role (admin only)
-    await db.auth.updateUserRole("user_id_123", "moderator");
-    ```
+await db.auth.initAuth();
+
+if (db.auth.isAuthenticated()) {
+  const currentUser = await db.auth.getCurrentUser();
+  if (currentUser.data.role === "admin") {
+    // Show admin features
+  }
+}
+   ```
 
   </Tab>
 
@@ -1157,18 +1178,27 @@ export function useAuth() {
     setLoading(false);
   }, []);
 
-  const login = async (email: string, password: string) => {
-    const session = await db.auth.login(email, password);
-    setUser(session.user);
-    return session;
-  };
 
-  const register = async (email: string, password: string, data?: any) => {
-    const user = await db.auth.register(email, password, data);
+const login = async (email: string, password: string) => {
+  const result = await db.auth.login({ email, password });
+
+  if (!result.requires_2fa) {
+    const user = await db.auth.getCurrentUser();
     setUser(user);
-    return user;
-  };
+  }
 
+  return result;
+};
+
+const register = async (email: string, password: string, data?: any) => {
+  const result = await db.auth.register({ email, password, data });
+
+  if (!result.requires_2fa) {
+    setUser(result.user);
+  }
+
+  return result;
+};
   const logout = async () => {
     await db.auth.logout();
     setUser(null);

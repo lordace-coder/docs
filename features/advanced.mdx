@@ -44,10 +44,10 @@ const newBooks = [
   { title: 'Clean Code', author: 'Robert Martin', price: 49.99 },
 ];
 
-const result = await db.batchCreateDocuments('books', newBooks);
+const documents = await db.batchCreateDocuments('books', newBooks);
 
-console.log(`Created ${result.created} books`);
-result.documents.forEach(book => {
+console.log(`Created ${documents.length} books`);
+documents.forEach(book => {
   console.log(`- ${book.id}: ${book.data.title}`);
 });
 ```
@@ -122,7 +122,7 @@ const updates = [
 const result = await db.batchUpdateDocuments('books', updates);
 
 console.log(`Updated: ${result.updated}`);
-console.log(`Failed: ${result.failed}`);
+console.log(`Failed: ${result.failed ?? 0}`);
 ```
 </Tab>
 
@@ -168,7 +168,7 @@ const ids = ['doc-1', 'doc-2', 'doc-3'];
 const result = await db.batchDeleteDocuments('books', ids);
 
 console.log(`Deleted: ${result.deleted}`);
-console.log(`Failed: ${result.failed}`);
+console.log(`Failed: ${result.failed ?? 0}`);
 ```
 </Tab>
 

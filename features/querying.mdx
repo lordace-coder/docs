@@ -686,8 +686,7 @@ curl "https://api.cocobase.buzz/collections/users/documents?name__or__email_cont
 const users = await db.listDocuments('users', {
   filters: {
     status: 'active',
-    '[or]role': 'admin',
-    '[or]role': 'moderator'
+    'role_in': 'admin,moderator'
   }
 });
 
@@ -1333,7 +1332,7 @@ my_feed = get_user_feed('user-123')
 
 <Tab title="HTTP">
 ```bash
-curl "https://api.cocobase.buzz/collections/posts/documents?[or]author_id=user-123&[or]followers_array_contains=user-123&status=published&orderBy=created_at&order=desc&limit=20&offset=0" \
+curl "https://api.cocobase.buzz/collections/posts/documents?%5Bor%5Dauthor_id=user-123&%5Bor%5Dfollowers_array_contains=user-123&status=published&orderBy=created_at&order=desc&limit=20&offset=0" \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>

@@ -60,24 +60,31 @@ Collections in Cocobase are **schema-less** - documents in the same collection c
 <Tabs>
   <Tab title="JavaScript">
     ```typescript
-    // These can all exist in the same collection
-    await db.createDocument("products", {
-      type: "book",
-      title: "Learning TypeScript",
-      author: "John Doe",
-      pages: 350
-    });
 
-    await db.createDocument("products", {
-      type: "laptop",
-      brand: "Apple",
-      model: "MacBook Pro",
-      specs: {
-        ram: "16GB",
-        storage: "512GB"
-      }
-    });
-    ```
+// These can all exist in the same collection
+await db.createDocument({
+  collection: "products",
+  data: {
+    type: "book",
+    title: "Learning TypeScript",
+    author: "John Doe",
+    pages: 350
+  }
+});
+
+await db.createDocument({
+  collection: "products",
+  data: {
+    type: "laptop",
+    brand: "Apple",
+    model: "MacBook Pro",
+    specs: {
+      ram: "16GB",
+      storage: "512GB"
+    }
+  }
+});
+   ```
 
   </Tab>
 
@@ -237,26 +244,34 @@ Every document has a unique `id` field:
 <Tabs>
   <Tab title="Auto-generated">
     ```typescript
-    // Cocobase generates a unique ID
-    const doc = await db.createDocument("users", {
-      name: "Alice"
-    });
 
-    console.log(doc.id); // "507f1f77bcf86cd799439011"
-    ```
+// Cocobase generates a unique ID
+const doc = await db.createDocument({
+  collection: "users",
+  data: {
+    name: "Alice"
+  }
+});
+
+console.log(doc.id);
+   ```
 
   </Tab>
 
   <Tab title="Custom ID">
     ```typescript
-    // Provide your own ID
-    const doc = await db.createDocument("users", {
-      id: "user_alice_2024",
-      name: "Alice"
-    });
 
-    console.log(doc.id); // "user_alice_2024"
-    ```
+// Provide your own ID
+const doc = await db.createDocument({
+  collection: "users",
+  id: "user_alice_2024",
+  data: {
+    name: "Alice"
+  }
+});
+
+console.log(doc.id);
+   ```
 
   </Tab>
 </Tabs>
@@ -308,11 +323,14 @@ Collections are created automatically when you insert the first document:
 <Tabs>
   <Tab title="JavaScript">
     ```typescript
-    // Collection "users" is created automatically
-    await db.createDocument("users", {
-      name: "Alice"
-    });
-    ```
+// Collection "users" is created automatically
+await db.createDocument({
+  collection: "users",
+  data: {
+    name: "Alice"
+  }
+});
+  ```
   </Tab>
 
   <Tab title="Dart">
@@ -462,11 +480,12 @@ Collections are created automatically when you insert the first document:
       "authorId": "user_123"  // Reference to user
     }
 
-    // Then populate when needed
-    const posts = await db.listDocuments("posts", {
-      populate: ["authorId"]
-    });
-    ```
+// Then populate when needed
+const posts = await db.listDocuments({
+  collection: "posts",
+  populate: ["authorId"]
+});
+   ```
 
   </Accordion>
 
@@ -474,14 +493,20 @@ Collections are created automatically when you insert the first document:
     Add indexes for fields you query often to improve performance.
 
     ```typescript
-    // Create index on email field
-    await db.createIndex("users", "email");
+// Create index on email field
+await db.createIndex({
+  collection: "users",
+  field: "email"
+});
 
-    // Queries on email will be faster
-    const user = await db.listDocuments("users", {
-      filters: { email: { $eq: "alice@example.com" } }
-    });
-    ```
+// Queries on email will be faster
+const user = await db.listDocuments({
+  collection: "users",
+  filters: {
+    email: { $eq: "alice@example.com" }
+  }
+});
+   ```
 
   </Accordion>
 
@@ -522,13 +547,14 @@ interface User {
   updatedAt: string;
 }
 
-// Type-safe create
-const user = await db.createDocument<User>("users", {
-  name: "Alice",
-  email: "alice@example.com",
-  role: "user",
+const user = await db.createDocument<User>({
+  collection: "users",
+  data: {
+    name: "Alice",
+    email: "alice@example.com",
+    role: "user"
+  }
 });
-
 // user is typed as User
 console.log(user.name); // ✅ TypeScript knows this exists
 console.log(user.foo); // ❌ TypeScript error

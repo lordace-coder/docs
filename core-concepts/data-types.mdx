@@ -117,17 +117,19 @@ Dates are stored as ISO 8601 strings.
 <Tabs>
   <Tab title="JavaScript">
     ```typescript
-    // Create with current date
-    await db.createDocument("events", {
-      name: "Product Launch",
-      date: new Date().toISOString()
-    });
 
-    // Parse date from document
-    const event = await db.getDocument("events", "event_123");
-    const date = new Date(event.date);
-    console.log(date.toLocaleDateString()); // "1/15/2024"
-    ```
+// Create with current date
+await db.collection("events").create({
+  name: "Product Launch",
+  date: new Date().toISOString(),
+});
+
+// Parse date from document
+const event = await db.collection("events").get("event_123");
+const date = new Date(event.date);
+
+console.log(date.toLocaleDateString()); // "1/15/2024"
+   ```
 
   </Tab>
 
@@ -269,7 +271,7 @@ interface Product {
 }
 
 // Type-safe operations
-const product = await db.createDocument<Product>("products", {
+const product = await db.collection("products").create<Product>({
   name: "Laptop",
   description: "High-performance laptop",
   price: 1299.99,
@@ -339,13 +341,13 @@ Store coordinates as nested objects:
 Query with range filters:
 
 ```typescript
-const nearbyPlaces = await db.listDocuments("places", {
+const nearbyPlaces = await db.collection("places").list({
   filters: {
     "location.lat": { $gte: 40.0, $lte: 41.0 },
     "location.lng": { $gte: -75.0, $lte: -73.0 },
   },
 });
-```
+``
 
 ## Type Validation
 
@@ -374,7 +376,7 @@ While Cocobase is schema-less, you can implement validation in your application:
     };
 
     const validatedData = UserSchema.parse(userData);
-    await db.createDocument("users", validatedData);
+    await db.collection("users").create(validatedData);
     ```
 
   </Tab>

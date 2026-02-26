@@ -37,12 +37,14 @@ import { Cocobase } from 'cocobase';
 
 const db = new Cocobase({ apiKey: 'your-api-key' });
 
-// Create a single document
+// Create a single document with timestamps
 const user = await db.createDocument('users', {
   name: 'John Doe',
   email: 'john@example.com',
   age: 30,
-  active: true
+  active: true,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString()
 });
 
 console.log('Created user:', user.id);
@@ -62,16 +64,17 @@ interface User {
 
 const db = new Cocobase({ apiKey: 'your-api-key' });
 
-// Type-safe document creation
-const user = await db.createDocument<User>('users', {
-  name: 'John Doe',
-  email: 'john@example.com',
-  age: 30,
-  active: true
+// TypeScript-style interface example in JS (for clarity)
+const user = await db.createDocument('users', {
+  name: 'Jane Smith',
+  email: 'jane@example.com',
+  age: 28,
+  active: true,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString()
 });
 
-console.log('Created user:', user.id);
-// user.data is typed as User
+console.log(user.data.name); // Type-safe structure assumed
 ```
 </Tab>
 
@@ -343,10 +346,29 @@ Create multiple documents in a single operation for better performance.
 <Tabs>
 <Tab title="JavaScript">
 ```javascript
+
 const users = await db.createDocuments('users', [
-  { name: 'Alice', email: 'alice@example.com', age: 25 },
-  { name: 'Bob', email: 'bob@example.com', age: 32 },
-  { name: 'Charlie', email: 'charlie@example.com', age: 28 }
+  {
+    name: 'Alice',
+    email: 'alice@example.com',
+    age: 25,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    name: 'Bob',
+    email: 'bob@example.com',
+    age: 32,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  },
+  {
+    name: 'Charlie',
+    email: 'charlie@example.com',
+    age: 28,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  }
 ]);
 
 console.log(`Created ${users.length} users`);
@@ -428,6 +450,7 @@ Retrieve documents by ID, or query collections with filters and pagination.
 <Tabs>
 <Tab title="JavaScript">
 ```javascript
+
 const user = await db.getDocument('users', 'user-123');
 console.log(user.data);
 ```
@@ -624,19 +647,13 @@ curl "https://api.cocobase.buzz/collections/users/documents?active=true&age_gte=
 <Tabs>
 <Tab title="JavaScript">
 ```javascript
-// Get first page (10 users)
-const page1 = await db.listDocuments('users', {
-  limit: 10,
-  offset: 0
-});
+// First page (10 users)
+const page1 = await db.listDocuments('users', { limit: 10, offset: 0 });
 
-// Get second page
-const page2 = await db.listDocuments('users', {
-  limit: 10,
-  offset: 10
-});
+// Second page
+const page2 = await db.listDocuments('users', { limit: 10, offset: 10 });
 
-// Helper function
+// Helper for any page
 function getPage(pageNumber, pageSize = 10) {
   return db.listDocuments('users', {
     limit: pageSize,
@@ -645,7 +662,7 @@ function getPage(pageNumber, pageSize = 10) {
 }
 
 const page3 = await getPage(3); // Users 21-30
-```
+``
 </Tab>
 
 <Tab title="Dart">
@@ -746,9 +763,12 @@ Modify existing documents with partial or full updates.
 <Tabs>
 <Tab title="JavaScript">
 ```javascript
+
+// Partial update
 await db.updateDocument('users', 'user-123', {
   age: 31,
-  active: false
+  active: false,
+  updatedAt: new Date().toISOString()
 });
 
 console.log('User updated');
@@ -816,11 +836,10 @@ curl -X PATCH https://api.cocobase.buzz/collections/users/documents/user-123 \
 <Tabs>
 <Tab title="JavaScript">
 ```javascript
-// Update multiple documents at once
 await db.updateDocuments('users', {
-  'user-1': { age: 31 },
-  'user-2': { age: 29 },
-  'user-3': { active: false }
+  'user-1': { age: 31, updatedAt: new Date().toISOString() },
+  'user-2': { age: 29, updatedAt: new Date().toISOString() },
+  'user-3': { active: false, updatedAt: new Date().toISOString() }
 });
 ```
 </Tab>
@@ -900,8 +919,7 @@ Remove documents from collections permanently.
 <Tab title="JavaScript">
 ```javascript
 await db.deleteDocument('users', 'user-123');
-console.log('User deleted');
-```
+console.log('User deleted');```
 </Tab>
 
 <Tab title="Dart">
@@ -942,8 +960,8 @@ curl -X DELETE https://api.cocobase.buzz/collections/users/documents/user-123 \
 <Tabs>
 <Tab title="JavaScript">
 ```javascript
-const idsToDelete = ['user-1', 'user-2', 'user-3'];
 
+const idsToDelete = ['user-1', 'user-2', 'user-3'];
 const result = await db.deleteDocuments('users', idsToDelete);
 console.log(`Deleted ${result.count} documents`);
 ```
@@ -1004,17 +1022,19 @@ Instead of permanently deleting, mark documents as deleted for recovery options.
 <Tabs>
 <Tab title="JavaScript">
 ```javascript
-// Mark as deleted instead of removing
+
+// Mark as deleted instead of permanent removal
 await db.updateDocument('users', 'user-123', {
   deleted: true,
-  deletedAt: new Date().toISOString()
+  deletedAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString()
 });
 
-// Query non-deleted items
+// Query non-deleted
 const activeUsers = await db.listDocuments('users', {
   filters: { deleted: false }
 });
-```
+``
 </Tab>
 
 <Tab title="Dart">
@@ -1092,12 +1112,21 @@ Handle errors gracefully across all operations.
 <Tabs>
 <Tab title="JavaScript">
 ```typescript
+
 try {
-  const user = await db.getDocument('users', userId);
-  console.log(user);
+  const user = await db.getDocument('users', 'user-123');
+  console.log(user.data);
 } catch (error) {
-  console.error('Failed to fetch user:', error.message);
-  // Handle error appropriately
+  // Cocobase error structure might include statusCode
+  if (error?.statusCode === 404) {
+    console.error('Document not found');
+  } else if (error?.statusCode === 401) {
+    console.error('Unauthorized: Invalid API key');
+  } else if (error?.statusCode === 403) {
+    console.error('Permission denied');
+  } else {
+    console.error('Unexpected error:', error.message || error);
+  }
 }
 ```
 </Tab>

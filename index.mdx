@@ -21,7 +21,10 @@ Go from idea to MVP in minutes, not weeks. No server configuration, no database 
     import { Cocobase } from "cocobase";
 
     // This is literally all you need to start
-    const db = new Cocobase({ apiKey: "YOUR_API_KEY" });
+    const db = new Cocobase({ 
+      apiKey: "YOUR_API_KEY",
+      projectId: "YOUR_PROJECT_ID" // Optional
+      });
 
     await db.createDocument("users", {
       name: "John"

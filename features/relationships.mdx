@@ -1002,21 +1002,24 @@ curl "https://api.cocobase.buzz/auth-collections/users/user_123?populate=followe
 <Tab title="JavaScript">
 ```javascript
 async function getReferralStats(db, userId) {
-  // Get the user who referred this user
-  const [user] = await db.listDocuments('users', {
+  // Get this user with populated referrer
+  const users = await db.listDocuments('users', {
     filters: { id: userId },
-    populate: ['referred_by']
+    populate: ['referred_by'],
+    limit: 1
   });
 
-  // Get all users this user referred
+  const user = users[0];
+
+  // Get users referred by this user
   const referrals = await db.listDocuments('users', {
-    filters: { 'data.referred_by': userId }
+    filters: { referred_by: userId }
   });
 
   return {
-    referredBy: user.data.referred_by,
+    referredBy: user?.data?.referred_by,
     referralCount: referrals.length,
-    referrals: referrals
+    referrals
   };
 }
 

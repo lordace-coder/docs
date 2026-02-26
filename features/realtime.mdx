@@ -34,17 +34,38 @@ Establish a persistent connection to receive real-time updates.
 <Tabs>
 <Tab title="JavaScript">
 ```javascript
-import { Cocobase } from 'cocobase';
+import { Cocobase, CollectionEvent } from "cocobase";
 
-const db = new Cocobase({ apiKey: 'your-api-key' });
+const db = new Cocobase({ apiKey: "your-api-key" });
 
-// Watch a collection
-const connection = db.watchCollection('users', (event) => {
-  console.log('Event:', event.type);
-  console.log('Data:', event.data);
-});
+// Watch collection
+const connection = db.watchCollection(
+  "users",
+  (event: CollectionEvent) => {
+    switch (event.type) {
+      case "connected":
+        console.log("✓ Connected");
+        break;
+      case "create":
+        console.log("📝 Created:", event.data.id);
+        break;
+      case "update":
+        console.log("✏️ Updated:", event.data.id);
+        break;
+      case "delete":
+        console.log("🗑️ Deleted:", event.data.id);
+        break;
+    }
+  },
+  {
+    onConnected: () => console.log("✓ Connection established"),
+    onDisconnected: () => console.log("✗ Connection lost"),
+    onError: (err) => console.error("Error:", err),
+    filters: { status: "active" }, // optional
+  }
+);
 
-// Close when done
+// Close connection when done
 connection.close();
 ```
 </Tab>
@@ -776,16 +797,15 @@ Send and receive messages across connected clients.
 <Tab title="JavaScript">
 ```javascript
 // Join a room
-const room = db.joinRoom('chat-room-1', (message) => {
-  console.log('Message from:', message.from);
-  console.log('Content:', message.content);
+const room = db.joinRoom("chat-room-1", (message) => {
+  console.log(`${message.from}: ${message.content}`);
 });
 
 // Send a message
 room.broadcast({
-  type: 'chat',
-  content: 'Hello everyone!',
-  timestamp: new Date().toISOString()
+  type: "chat",
+  content: "Hello everyone!",
+  timestamp: new Date().toISOString(),
 });
 
 // Leave room

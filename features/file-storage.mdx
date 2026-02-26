@@ -33,11 +33,11 @@ Upload files when creating or updating documents using field naming.
 <Tabs>
 <Tab title="JavaScript">
 ```javascript
+
 import { Cocobase } from 'cocobase';
 
 const db = new Cocobase({ apiKey: 'your-api-key' });
 
-// Upload avatar with user profile
 const user = await db.createDocumentWithFiles(
   'users',
   {
@@ -46,8 +46,8 @@ const user = await db.createDocumentWithFiles(
     bio: 'Software developer'
   },
   {
-    avatar: avatarFile,          // Single file
-    cover_photo: coverPhotoFile  // Another single file
+    avatar: avatarFile,
+    cover_photo: coverPhotoFile
   }
 );
 
@@ -171,7 +171,6 @@ Upload multiple files to create an array of URLs:
 <Tabs>
 <Tab title="JavaScript">
 ```javascript
-// Product with gallery
 const product = await db.createDocumentWithFiles(
   'products',
   {
@@ -181,13 +180,12 @@ const product = await db.createDocumentWithFiles(
   },
   {
     main_image: mainImageFile,
-    gallery: [img1File, img2File, img3File]  // Array of files
+    gallery: [img1File, img2File, img3File]
   }
 );
 
 console.log('Main image:', product.data.main_image);
 console.log('Gallery:', product.data.gallery);
-// Gallery: ["https://.../img1.jpg", "https://.../img2.jpg", "https://.../img3.jpg"]
 ```
 </Tab>
 
@@ -303,20 +301,15 @@ await db.updateDocumentWithFiles(
   'users',
   'user-123',
   undefined,  // No data changes
-  {
-    avatar: newAvatarFile
-  }
+  { avatar: newAvatarFile }
 );
 
 // Update both data and files
 await db.updateDocumentWithFiles(
   'users',
   'user-123',
-  { bio: 'Updated bio' },  // Data changes
-  {
-    avatar: newAvatarFile,
-    cover_photo: newCoverFile
-  }
+  { bio: 'Updated bio' },
+  { avatar: newAvatarFile, cover_photo: newCoverFile }
 );
 ```
 </Tab>
@@ -387,7 +380,6 @@ Register users with profile pictures:
 <Tabs>
 <Tab title="JavaScript">
 ```javascript
-// Register with avatar
 await db.registerWithFiles(
   'john@example.com',
   'password123',
@@ -396,12 +388,9 @@ await db.registerWithFiles(
     full_name: 'John Doe',
     bio: 'Developer'
   },
-  {
-    avatar: avatarFile
-  }
+  { avatar: avatarFile }
 );
 
-// Get user details
 const user = await db.auth.getUser();
 console.log('Avatar URL:', user.avatar);
 ```
@@ -504,21 +493,11 @@ Update authenticated user's profile pictures:
 <Tabs>
 <Tab title="JavaScript">
 ```javascript
-// Update only avatar
-await db.updateUserWithFiles(
-  undefined,
-  undefined,
-  undefined,
-  { avatar: newAvatarFile }
-);
+// Update avatar only
+await db.updateUserWithFiles(undefined, undefined, undefined, { avatar: newAvatarFile });
 
 // Update bio and avatar
-await db.updateUserWithFiles(
-  { bio: 'Updated bio', location: 'New York' },
-  undefined,
-  undefined,
-  { avatar: newAvatarFile }
-);
+await db.updateUserWithFiles({ bio: 'Updated bio', location: 'New York' }, undefined, undefined, { avatar: newAvatarFile });
 
 // Update email, data, and files
 await db.updateUserWithFiles(
