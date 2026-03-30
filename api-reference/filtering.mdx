@@ -1,0 +1,130 @@
+---
+title: Filtering Guide
+description: Advanced filtering, searching, and querying patterns for the Cocobase API
+---
+
+# Filtering Guide
+
+Cocobase provides a powerful, MongoDB-inspired query interface for your documents. You can filter, search, sort, and paginate using simple URL parameters or SDK method calls.
+
+## Query Operators
+
+Use operator suffixes on field names to perform advanced comparisons.
+
+| Operator | Suffix | Example | Description |
+|----------|--------|---------|-------------|
+| Equal | (none) | `status=published` | Exact match |
+| Not Equal | `__ne` | `status__ne=draft` | Not equal |
+| Greater Than | `__gt` | `price__gt=100` | Greater than |
+| Greater or Equal | `__gte` | `age__gte=18` | Greater than or equal |
+| Less Than | `__lt` | `price__lt=1000` | Less than |
+| Less or Equal | `__lte` | `stock__lte=10` | Less than or equal |
+| Contains | `__contains` | `title__contains=hello` | Case-insensitive search |
+| Starts With | `__startswith` | `name__startswith=john` | |
+| Ends With | `__endswith` | `email__endswith=.com` | |
+| In Array | `__in` | `status__in=a,b` | Value in comma-separated list |
+| Not In Array | `__notin` | `status__notin=c,d` | Value not in list |
+| Is Null | `__isnull` | `deleted__isnull=true` | Check if field is null |
+
+---
+
+## Boolean Logic
+
+### AND Queries (Implicit)
+By default, multiple query parameters are combined with **AND** logic.
+```bash
+# status=active AND role=admin
+curl "https://api.cocobase.buzz/collections/users?status=active&role=admin"
+```
+
+### OR Queries
+Use the `[or]` prefix to create OR conditions.
+```bash
+# status=published OR featured=true
+curl "https://api.cocobase.buzz/collections/posts?[or]status=published&[or]featured=true"
+```
+
+### Named OR Groups
+Group multiple OR conditions together. Groups are ANDed with other filters.
+```bash
+# category=tech AND (tag=python OR tag=go)
+curl "https://api.cocobase.buzz/collections/posts?category=tech&[or:tags]tag=python&[or:tags]tag=go"
+```
+
+### Multi-field Search
+Search for a keyword across multiple fields using the `__or__` syntax.
+```bash
+# Search 'john' in either 'name' OR 'email'
+curl "https://api.cocobase.buzz/collections/users?name__or__email__contains=john"
+```
+
+---
+
+## Sorting and Pagination
+
+### Sorting
+- `orderBy`: The field name to sort by.
+- `order`: Use `asc` (ascending) or `desc` (descending).
+```bash
+curl "https://api.cocobase.buzz/collections/posts?orderBy=createdAt&order=desc"
+```
+
+### Pagination
+- `limit`: Number of items to return (default 20, max 100).
+- `offset`: Number of items to skip.
+```bash
+curl "https://api.cocobase.buzz/collections/posts?limit=10&offset=20"
+```
+
+---
+
+## Relationships (Population)
+
+Fetch related documents in a single request using the `populate` parameter.
+
+### Single Population
+```bash
+curl "https://api.cocobase.buzz/collections/posts?populate=author"
+```
+
+### Nested Population
+```bash
+curl "https://api.cocobase.buzz/collections/posts?populate=author.company.location"
+```
+
+### Filtering by Related Fields
+```bash
+# Get posts where author's role is admin
+curl "https://api.cocobase.buzz/collections/posts?author.role=admin&populate=author"
+```
+
+---
+
+## Complete Examples
+
+### Complex E-Commerce Query
+Get available products in 'electronics' between $100-$500, sorted by price.
+```javascript
+const params = new URLSearchParams({
+  category: 'electronics',
+  status: 'available',
+  price__gte: '100',
+  price__lte: '500',
+  orderBy: 'price',
+  order: 'asc',
+  populate: 'brand'
+});
+
+const res = await fetch(`https://api.cocobase.buzz/collections/products?${params}`);
+```
+
+### User Search
+Find users matching a search term in name or bio who are verified.
+```python
+params = {
+    'verified': 'true',
+    '[or:search]name__contains': 'alice',
+    '[or:search]bio__contains': 'alice'
+}
+res = requests.get('https://api.cocobase.buzz/collections/users', params=params)
+```

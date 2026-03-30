@@ -1,0 +1,120 @@
+---
+title: Storage API
+description: Complete reference for file storage, uploads, and management in Cocobase
+---
+
+# Storage API
+
+Cocobase provides a secure and scalable file storage system with automatic S3 integration. You can upload files directly or alongside your documents and user profiles.
+
+## Overview
+
+Key features:
+- **Direct Uploads**: Upload files to specific paths.
+- **Integrated Uploads**: Upload files when creating or updating documents.
+- **User Files**: Support for user avatars and cover photos.
+- **S3-Backed**: High-performance cloud storage for all file types.
+- **Public URLs**: Automatically generated CDN-ready URLs.
+
+---
+
+## File Upload
+
+Upload a file using `multipart/form-data`.
+
+### Endpoint
+`POST /storage/upload`
+
+### Parameters
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `file` | file | Yes | The file to upload |
+| `path` | string | No | Target folder/path (e.g., `avatars/`) |
+
+### Example
+<Tabs>
+<Tab title="cURL">
+```bash
+curl -X POST https://api.cocobase.buzz/storage/upload \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -F "file=@/path/to/image.jpg" \
+  -F "path=products/"
+```
+</Tab>
+<Tab title="JavaScript">
+```javascript
+const formData = new FormData();
+formData.append('file', fileInput.files[0]);
+formData.append('path', 'uploads/');
+
+const res = await fetch('https://api.cocobase.buzz/storage/upload', {
+  method: 'POST',
+  headers: { 'Authorization': 'Bearer YOUR_KEY' },
+  body: formData
+});
+```
+</Tab>
+</Tabs>
+
+---
+
+## Management Endpoints
+
+### List Files
+Retrieve all files in a specific directory.
+- **Endpoint**: `GET /storage/list`
+- **Query Params**: `path`, `limit`, `offset`
+
+### Delete File
+- **Endpoint**: `DELETE /storage/file/{id}`
+
+### Storage Info
+Get project-wide storage usage statistics.
+- **Endpoint**: `GET /storage/info`
+
+---
+
+## Uploading with Users & Documents
+
+Cocobase allows you to upload files as part of a document or user update. This is the recommended way to handle avatars and media attachments.
+
+### User Profile Update with Avatar
+```bash
+curl -X PATCH https://api.cocobase.buzz/auth-collections/user \
+  -H "Authorization: Bearer <token>" \
+  -F "avatar=@/path/to/avatar.jpg" \
+  -F "data={\"bio\": \"Hello world\"}"
+```
+
+### Document Creation with Files
+```bash
+curl -X POST https://api.cocobase.buzz/collections/posts \
+  -H "Authorization: Bearer <key>" \
+  -F "image=@/path/to/post.jpg" \
+  -F "data={\"title\": \"My Post\"}"
+```
+
+---
+
+## Best Practices
+
+1. **Validation**: Always validate file types and sizes on the client side before uploading.
+2. **Organization**: Use descriptive paths (e.g., `/users/{id}/avatars/`) to keep storage organized.
+3. **Optimizations**: Compress images before upload to save space and improve load times.
+4. **Error Handling**: Handle 413 (Payload Too Large) and storage limit errors gracefully.
+
+---
+
+## Storage Limits
+
+| Tier | Max File Size | Total Storage |
+|------|---------------|---------------|
+| Free | 10 MB | 1 GB |
+| Pro | 100 MB | 100 GB |
+| Enterprise | 1 GB | Unlimited |
+
+### Supported Types
+- **Images**: `.jpg`, `.png`, `.webp`, `.gif`, `.svg`
+- **Docs**: `.pdf`, `.docx`, `.txt`, `.csv`
+- **Video**: `.mp4`, `.mov`, `.webm`
+- **Archives**: `.zip`, `.tar.gz`

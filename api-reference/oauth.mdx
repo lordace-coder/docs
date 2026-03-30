@@ -1,0 +1,105 @@
+---
+title: OAuth Guide
+description: Complete reference for implementing Google, GitHub, and Apple OAuth in Cocobase
+---
+
+# OAuth Guide
+
+Cocobase simplifies third-party authentication by handling the complex OAuth exchange and automatically creating or linking user accounts.
+
+## Supported Providers
+
+- **Google**: Recommended for all platforms.
+- **GitHub**: Best for developer-focused applications.
+- **Apple**: Required for iOS apps with third-party login.
+
+---
+
+## Configuration
+
+Before implementing OAuth, you must configure your providers in the [Cocobase Dashboard](https://cocobase.buzz/dashboard):
+
+1. Go to **Settings** > **Authentication** > **OAuth**.
+2. Enable your desired providers.
+3. Enter your **Client ID** and **Client Secret** (obtained from the provider's developer console).
+4. Add the Cocobase redirect URI to your provider's allowed list:
+   `https://api.cocobase.buzz/auth/oauth/{provider}/callback`
+
+---
+
+## OAuth Flow
+
+Cocobase uses a two-step flow to handle OAuth.
+
+### 1. Get Authorization URL
+Direct your user to the provider's login page.
+- **Endpoint**: `GET /auth-collections/oauth/{provider}?redirect_uri={your_callback_url}`
+
+### 2. Verify and Login
+Once the user completes the login, the provider redirects them back to your `redirect_uri` with an authorization `code`. Send this code to Cocobase to complete the login.
+- **Endpoint**: `POST /auth-collections/verify-{provider}-login`
+- **Body**:
+```json
+{
+  "code": "auth_code_from_provider",
+  "redirect_uri": "your_callback_url"
+}
+```
+
+---
+
+## Implementation Examples
+
+### Google OAuth (Web)
+
+```javascript
+// 1. Get the URL
+const res = await fetch('https://api.cocobase.buzz/auth-collections/oauth/google?redirect_uri=http://localhost:3000/callback');
+const { url } = await res.json();
+window.location.href = url;
+
+// 2. On your callback page
+const code = new URLSearchParams(window.location.search).get('code');
+const loginRes = await fetch('https://api.cocobase.buzz/auth-collections/verify-google-login', {
+  method: 'POST',
+  body: JSON.stringify({ code, redirect_uri: 'http://localhost:3000/callback' })
+});
+const { access_token } = await loginRes.json();
+```
+
+### Apple OAuth (iOS)
+
+When using Apple Sign In on iOS, you typically use the native SDK to get an `identityToken` and then send it to Cocobase.
+
+```javascript
+// Example using a hybrid framework or native bridge
+const appleCredential = await AppleSignIn.signIn();
+
+const res = await fetch('https://api.cocobase.buzz/auth-collections/verify-apple-login', {
+  method: 'POST',
+  body: JSON.stringify({
+    identityToken: appleCredential.identityToken,
+    user: {
+      firstName: appleCredential.fullName.givenName,
+      lastName: appleCredential.fullName.familyName
+    }
+  })
+});
+```
+
+---
+
+## Security Features
+
+1. **State Parameter**: Cocobase can automatically handle the `state` parameter to prevent CSRF attacks.
+2. **PKCE Support**: Recommended for mobile and single-page applications.
+3. **Secure Callbacks**: Only allow redirects to domains whitelisted in your dashboard.
+4. **Account Linking**: If a user logs in with an email that already exists via a different provider, Cocobase can automatically link the accounts (configurable in settings).
+
+---
+
+## Troubleshooting
+
+- **Redirect URI Mismatch**: Ensure the URI in your dashboard, provider console, and API request are IDENTICAL.
+- **Scope Issues**: Check if you've requested the correct scopes (e.g., `email`, `profile`) in the provider console.
+- **Token Expiry**: Auth codes from providers usually expire within minutes. Process them immediately.

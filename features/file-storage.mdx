@@ -89,7 +89,7 @@ console.log('Avatar URL:', user.data.avatar);
 
 <Tab title="Dart">
 ```dart
-import 'package:cocobase_flutter/cocobase_flutter.dart';
+import 'package:coco_base_flutter/coco_base_flutter.dart';
 import 'dart:io';
 
 final db = Cocobase(CocobaseConfig(apiKey: 'your-api-key'));
@@ -426,8 +426,8 @@ const user = await db.auth.getUser();
 
 <Tab title="Dart">
 ```dart
-// Register with files
-await db.auth.registerWithFiles(
+// Note: File uploads during registration are not yet supported in the Flutter SDK.
+await db.register(
   email: 'john@example.com',
   password: 'password123',
   data: {
@@ -435,14 +435,11 @@ await db.auth.registerWithFiles(
     'full_name': 'John Doe',
     'bio': 'Developer'
   },
-  files: {
-    'avatar': File('/path/to/avatar.jpg')
-  }
 );
 
 // Get user
-final user = await db.auth.getUser();
-print('Avatar: ${user.avatar}');
+final user = await db.getCurrentUser();
+print('Avatar: ${user?.data['avatar']}');
 ```
 </Tab>
 
@@ -526,14 +523,15 @@ await db.updateUserWithFiles<UserMetadata>(
 
 <Tab title="Dart">
 ```dart
+// Note: File uploads during user update use db.updateUser() in the Flutter SDK.
 // Update user avatar
-await db.auth.updateUserWithFiles(
+await db.updateUser(
   data: {'bio': 'Updated bio'},
   files: {'avatar': File('/path/to/new-avatar.jpg')}
 );
 
 // Update multiple fields
-await db.auth.updateUserWithFiles(
+await db.updateUser(
   data: {'bio': 'Updated bio', 'location': 'New York'},
   email: 'newemail@example.com',
   files: {

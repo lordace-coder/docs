@@ -10,7 +10,7 @@ Complete guide to using Cocobase with Go applications.
 ## Installation
 
 ```bash
-go get github.com/cocobase-team/cocobase-go
+go get github.com/lordace-coder/cocobase-go
 ```
 
 ## Quick Start
@@ -21,45 +21,64 @@ go get github.com/cocobase-team/cocobase-go
 package main
 
 import (
-    "github.com/cocobase-team/cocobase-go"
+    "context"
+    "fmt"
+    "log"
+
+    "github.com/lordace-coder/cocobase-go/cocobase"
 )
 
 func main() {
-    db := cocobase.NewClient(cocobase.Config{
+    client := cocobase.NewClient(cocobase.Config{
         APIKey:  "YOUR_API_KEY",
         BaseURL: "https://api.cocobase.buzz", // Optional
     })
+
+    ctx := context.Background()
+    _ = ctx // use ctx in your operations
 }
+```
+
+```go
+// With custom storage (for token persistence)
+import "github.com/lordace-coder/cocobase-go/storage"
+
+store := storage.NewMemoryStorage()
+// Or file-based:
+// store, _ := storage.NewFileStorage(".cocobase/storage.json")
+
+client := cocobase.NewClient(cocobase.Config{
+    APIKey:  "YOUR_API_KEY",
+    Storage: store,
+})
 ```
 
 ### Basic Operations
 
 ```go
-// List documents
-docs, err := db.ListDocuments("posts", nil)
-if err != nil {
-    log.Fatal(err)
-}
+// List documents (no filters)
+docs, err := client.ListDocuments(ctx, "posts", nil)
+
+// List with query
+query := cocobase.NewQuery().Where("status", "active").Limit(20)
+docs, err := client.ListDocuments(ctx, "posts", query)
 
 // Get single document
-doc, err := db.GetDocument("posts", "doc-id")
-if err != nil {
-    log.Fatal(err)
-}
+doc, err := client.GetDocument(ctx, "posts", "doc-id")
 
 // Create document
-created, err := db.CreateDocument("posts", map[string]interface{}{
+created, err := client.CreateDocument(ctx, "posts", map[string]interface{}{
     "title":   "My First Post",
     "content": "Hello World!",
 })
 
 // Update document
-err = db.UpdateDocument("posts", "doc-id", map[string]interface{}{
+updated, err := client.UpdateDocument(ctx, "posts", "doc-id", map[string]interface{}{
     "title": "Updated Title",
 })
 
 // Delete document
-err = db.DeleteDocument("posts", "doc-id")
+err = client.DeleteDocument(ctx, "posts", "doc-id")
 ```
 
 ---
@@ -67,87 +86,69 @@ err = db.DeleteDocument("posts", "doc-id")
 ## Querying Data
 
 ### Simple Filters
-
 ```go
-// Find active users older than 18
-users, err := db.ListDocuments("users", &cocobase.QueryOptions{
-    Filters: map[string]interface{}{
-        "status":  "active",
-        "age__gt": 18,
-    },
-})
+query := cocobase.NewQuery().Where("status", "active")
+docs, err := client.ListDocuments(ctx, "users", query)
 ```
-
-### Query Builder
-
-```go
-query := cocobase.NewQueryBuilder().
-    Where("status", "active").
-    WhereGreaterThan("age", 18).
-    WhereContains("email", "@gmail.com").
-    OrderByDesc("createdAt").
-    Limit(10)
-
-users, err := db.ListDocuments("users", &cocobase.QueryOptions{
-    Query: query,
-})
-```
-
----
-
-## Operators Reference
 
 ### Comparison Operators
-
-| Operator | Filter Key | Example |
-|----------|-----------|---------|
-| Equal | `field` | `"status": "active"` |
-| Greater Than | `field__gt` | `"age__gt": 18` |
-| Greater or Equal | `field__gte` | `"age__gte": 18` |
-| Less Than | `field__lt` | `"age__lt": 65` |
-| Less or Equal | `field__lte` | `"age__lte": 65` |
-| Not Equal | `field__ne` | `"status__ne": "deleted"` |
-
-### String Operators
-
-| Operator | Filter Key | Example |
-|----------|-----------|---------|
-| Contains | `field__contains` | `"title__contains": "go"` |
-| Starts With | `field__startswith` | `"email__startswith": "admin"` |
-| Ends With | `field__endswith` | `"domain__endswith": ".com"` |
-
-### Array Operators
-
-| Operator | Filter Key | Example |
-|----------|-----------|---------|
-| In Array | `field__in` | `"status__in": "active,pending"` |
-| Not In Array | `field__notin` | `"status__notin": "deleted,archived"` |
-
----
-
-## Sorting and Pagination
-
-### Sorting
-
 ```go
-docs, err := db.ListDocuments("posts", &cocobase.QueryOptions{
-    Filters: map[string]interface{}{
-        "orderBy": "createdAt",
-        "order":   "desc",
-    },
-})
+query := cocobase.NewQuery().
+    Filter("age", "gte", 18).
+    Filter("age", "lte", 65)
 ```
 
-### Pagination
-
+### String Operations
 ```go
-// Get page 3 (20 items per page)
-docs, err := db.ListDocuments("posts", &cocobase.QueryOptions{
-    Filters: map[string]interface{}{
-        "limit":  20,
-        "offset": 40,
-    },
-})
+query := cocobase.NewQuery().
+    Filter("email", "endswith", "gmail.com")
+```
+
+### IN Operator
+```go
+query := cocobase.NewQuery().
+    Filter("role", "in", "admin,moderator,support")
+```
+
+### NULL Checks
+```go
+query := cocobase.NewQuery().
+    Filter("deletedAt", "isnull", true)
+```
+
+### Simple OR
+```go
+query := cocobase.NewQuery().
+    Where("status", "active").
+    Or("isPremium", "eq", true).
+    Or("isVerified", "eq", true)
+```
+
+### Named OR Groups
+```go
+query := cocobase.NewQuery().
+    OrGroup("tier", "isPremium", "eq", true).
+    OrGroup("tier", "isVerified", "eq", true).
+    OrGroup("location", "country", "eq", "US").
+    OrGroup("location", "country", "eq", "UK")
+```
+
+### Multi-Field Search
+```go
+query := cocobase.NewQuery().
+    MultiFieldOr([]string{"name", "email"}, "contains", "john")
+```
+
+### Sorting and Pagination
+```go
+query := cocobase.NewQuery().
+    Where("status", "active").
+    Sort("createdAt").
+    OrderDesc().
+    Limit(50).
+    Offset(100)
+
+docs, err := client.ListDocuments(ctx, "users", query)
 ```
 
 ---
@@ -174,13 +175,13 @@ newBook := Book{
     Price:  45.99,
 }
 
-created, err := db.CreateDocument("books", newBook)
+created, err := client.CreateDocument(ctx, "books", newBook)
 ```
 
 ### Parse Response to Struct
 
 ```go
-doc, err := db.GetDocument("books", "doc-id")
+doc, err := client.GetDocument(ctx, "books", "doc-id")
 if err != nil {
     log.Fatal(err)
 }
@@ -198,73 +199,77 @@ fmt.Println(book.Title)
 
 ## Authentication
 
-### Email/Password
-
+### Initialize Auth (restore session from storage)
 ```go
-// Register
-err := db.Auth.Register(cocobase.AuthCredentials{
-    Email:    "user@example.com",
-    Password: "securePassword123",
-})
-
-// Get user after registration
-user, err := db.Auth.GetUser()
-fmt.Println("User ID:", user.ID)
-
-// Login
-err = db.Auth.Login(cocobase.AuthCredentials{
-    Email:    "user@example.com",
-    Password: "securePassword123",
-})
-
-// Get user after login
-user, err = db.Auth.GetUser()
-
-// Logout
-err = db.Auth.Logout()
-
-// Check current user
-currentUser := db.Auth.CurrentUser()
+err := client.InitAuth(ctx)
 ```
 
-### OAuth
-
+### Register
 ```go
-// Google OAuth
-err := db.Auth.SignInWithGoogle()
-user, err := db.Auth.GetUser()
+err := client.Register(ctx, "user@example.com", "password123", map[string]interface{}{
+    "firstName": "John",
+    "lastName":  "Doe",
+})
+// Pass nil for no extra data:
+// err := client.Register(ctx, "user@example.com", "password123", nil)
+```
 
-// GitHub OAuth
-err = db.Auth.SignInWithGitHub()
-user, err = db.Auth.GetUser()
+### Login
+```go
+err = client.Login(ctx, "user@example.com", "password123")
+```
+
+### Get Current User
+```go
+user, err := client.GetCurrentUser(ctx)
+fmt.Println("User ID:", user.ID)
+fmt.Println("Email:", user.Email)
+```
+
+### Update User
+```go
+newEmail := "new@example.com"
+user, err = client.UpdateUser(ctx, map[string]interface{}{
+    "phone": "+1234567890",
+}, &newEmail, nil)
+```
+
+### Logout
+```go
+err = client.Logout()
+```
+
+### Check Authentication
+```go
+if client.IsAuthenticated() {
+    fmt.Println("User is logged in")
+}
+```
+
+### Check Role
+```go
+if client.HasRole("admin") {
+    fmt.Println("User is an admin")
+}
 ```
 
 ---
 
 ## Real-time Data
 
-### Watch Collection
-
+### Watch a Collection
 ```go
-// Watch for changes
-cancel, err := db.WatchCollection("posts", func(event cocobase.Event) {
-    fmt.Println("Event type:", event.Type)
-    fmt.Println("Document:", event.Document)
-})
+conn, err := client.WatchCollection(ctx, "posts", func(event cocobase.Event) {
+    fmt.Printf("Event: %s\n", event.Event)
+    fmt.Printf("Data: %+v\n", event.Data)
+}, "posts-watcher") // last param is connection name (optional label)
 
-// Stop watching
-cancel()
-```
+if err != nil {
+    log.Fatal(err)
+}
 
-### Watch Document
-
-```go
-cancel, err := db.WatchDocument("posts", "doc-id", func(doc cocobase.Document) {
-    fmt.Println("Document updated:", doc.Data)
-})
-
-// Stop watching
-cancel()
+// Close when done
+defer conn.Close()
 ```
 
 ---
@@ -272,12 +277,12 @@ cancel()
 ## Error Handling
 
 ```go
-doc, err := db.GetDocument("posts", "non-existent-id")
+doc, err := client.GetDocument(ctx, "posts", "non-existent-id")
 if err != nil {
-    if cocobase.IsNotFound(err) {
-        fmt.Println("Document not found")
-    } else if cocobase.IsUnauthorized(err) {
-        fmt.Println("Not authorized")
+    var apiErr *cocobase.APIError
+    if errors.As(err, &apiErr) {
+        fmt.Println("Status:", apiErr.StatusCode)
+        fmt.Println("Error:", apiErr.Body)
     } else {
         fmt.Println("Error:", err)
     }
@@ -292,7 +297,7 @@ if err != nil {
 ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 defer cancel()
 
-doc, err := db.GetDocumentWithContext(ctx, "posts", "doc-id")
+doc, err := client.GetDocument(ctx, "posts", "doc-id")
 if err != nil {
     if errors.Is(err, context.DeadlineExceeded) {
         fmt.Println("Request timed out")
@@ -323,7 +328,7 @@ data := doc.Data.(map[string]interface{})
 ### 2. Always Handle Errors
 
 ```go
-doc, err := db.GetDocument("posts", id)
+doc, err := client.GetDocument(ctx, "posts", id)
 if err != nil {
     return nil, fmt.Errorf("failed to get post: %w", err)
 }
@@ -332,7 +337,7 @@ if err != nil {
 ### 3. Use Environment Variables
 
 ```go
-db := cocobase.NewClient(cocobase.Config{
+client := cocobase.NewClient(cocobase.Config{
     APIKey: os.Getenv("COCOBASE_API_KEY"),
 })
 ```
@@ -341,12 +346,11 @@ db := cocobase.NewClient(cocobase.Config{
 
 ```go
 // Good
-docs, err := db.ListDocuments("posts", &cocobase.QueryOptions{
-    Filters: map[string]interface{}{"limit": 20},
-})
+query := cocobase.NewQuery().Limit(20)
+docs, err := client.ListDocuments(ctx, "posts", query)
 
 // Bad - could return thousands
-docs, err := db.ListDocuments("posts", nil)
+docs, err := client.ListDocuments(ctx, "posts", nil)
 ```
 
 ---

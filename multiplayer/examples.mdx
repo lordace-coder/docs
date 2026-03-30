@@ -1,7 +1,7 @@
 ---
-title: "Examples"
-description: "Complete multiplayer game examples you can deploy"
-icon: "book"
+title: 'Examples'
+description: 'Complete multiplayer game examples you can deploy'
+icon: 'book'
 ---
 
 ## Example Games
@@ -90,7 +90,6 @@ A simple example showing real-time player positions.
         if room.get_player_count() == 0:
             room.destroy()
     ```
-
   </Tab>
 
   <Tab title="HTML Client">
@@ -112,7 +111,7 @@ A simple example showing real-time player positions.
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
 
-            const ws = new WebSocket('wss://cloud.cocobase.buzz/ws/PROJECT_ID/cursor_game');
+            const ws = new WebSocket('ws://localhost:8000/ws/PROJECT_ID/cursor_game');
             let myId = null;
             let players = {};
 
@@ -181,7 +180,6 @@ A simple example showing real-time player positions.
     </body>
     </html>
     ```
-
   </Tab>
 
   <Tab title="JavaScript SDK">
@@ -242,7 +240,6 @@ A simple example showing real-time player positions.
       connection.disconnect();
     });
     ```
-
   </Tab>
 </Tabs>
 
@@ -406,7 +403,6 @@ A betting game with automatic rounds and multipliers.
         if room.get_player_count() == 0:
             room.destroy()
     ```
-
   </Tab>
 
   <Tab title="JavaScript SDK">
@@ -490,7 +486,6 @@ A betting game with automatic rounds and multipliers.
       document.getElementById('phase').textContent = gamePhase;
     }
     ```
-
   </Tab>
 </Tabs>
 
@@ -608,7 +603,6 @@ Competitive game where players collect coins for points.
         if room.get_player_count() == 0:
             room.destroy()
     ```
-
   </Tab>
 
   <Tab title="JavaScript SDK">
@@ -684,7 +678,6 @@ Competitive game where players collect coins for points.
       player.y = y;
     });
     ```
-
   </Tab>
 </Tabs>
 
@@ -771,7 +764,6 @@ Real-time chat with room support.
         if room.get_player_count() == 0:
             room.destroy()
     ```
-
   </Tab>
 
   <Tab title="JavaScript SDK">
@@ -857,7 +849,6 @@ Real-time chat with room support.
       renderMessages();
     }
     ```
-
   </Tab>
 </Tabs>
 

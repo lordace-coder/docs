@@ -1,0 +1,156 @@
+---
+title: Email Service
+description: Send emails from your cloud functions using the built-in email service
+---
+
+# Email Service
+
+Every cloud function has access to a fully managed email 
+service. No setup required — just use the email global 
+and Cocobase handles the rest.
+
+## Provider Priority
+
+Cocobase automatically selects the best available email 
+provider for your project:
+
+1. Project Integration (CocoMailer / Resend / EmailJS)
+2. SMTP Configuration (your own SMTP server)
+3. Cocobase Fallback (managed Resend via noreply@cocobase.buzz)
+
+Configure your preferred provider once in the dashboard 
+and all email calls use it automatically.
+
+## Two Ways to Send Email
+
+### 1. req.send_mail() — Quick Send
+
+Best for simple one-off emails:
+```python
+def main():
+    req.send_mail(
+        to="user@example.com",
+        subject="Hello!",
+        body="<p>Welcome to our platform.</p>"
+    )
+    return {"sent": True}
+```
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| to | str or list | ✅ | Recipient(s) |
+| subject | str | ✅ | Email subject |
+| body | str | ❌ | HTML body |
+| template_id | str | ❌ | Template name to use |
+| context | dict | ❌ | Template variables |
+
+### 2. email.* — Full Email Service
+
+The email global is pre-injected into every cloud function 
+— no imports needed.
+
+## Email Methods
+
+### Send Generic Email
+```python
+def main():
+    await email.send_email(
+        recipients=["alice@example.com", "bob@example.com"],
+        subject="Your order is confirmed",
+        body="<h1>Thanks for your order!</h1>"
+    )
+    return {"ok": True}
+```
+
+### Send Welcome Email
+```python
+def main():
+    await email.send_welcome_email(
+        to_email="user@example.com",
+        user_name="John",
+        app_name="MyApp",
+        login_url="https://myapp.com/login"
+    )
+    return {"registered": True}
+```
+
+### Send Password Reset Email
+```python
+def main():
+    user_email = req.get("email")
+    token = secrets.token_urlsafe(32)
+
+    db.create_document("password_resets", {
+        "email": user_email,
+        "token": token
+    })
+
+    await email.send_password_reset_email(
+        to_email=user_email,
+        token=token,
+        reset_url_base="https://myapp.com/reset-password",
+        app_name="MyApp",
+        expiry_hours=2
+    )
+    return {"reset_email_sent": True}
+```
+
+### Send Password Changed Confirmation
+```python
+def main():
+    user = req.user
+    if not user:
+        return {"error": "Unauthorized"}, 401
+
+    await email.send_password_changed_email(
+        to_email=user.email,
+        app_name="MyApp"
+    )
+    return {"password_updated": True}
+```
+
+### Send 2FA Code Email
+```python
+def main():
+    user_email = req.get("email")
+    code = "".join([str(secrets.randbelow(10)) for _ in range(6)])
+
+    db.create_document("otp_codes", {
+        "email": user_email,
+        "code": code
+    })
+
+    await email.send_2fa_code_email(
+        to_email=user_email,
+        code=code,
+        app_name="MyApp",
+        expiry_minutes=10
+    )
+    return {"otp_sent": True}
+```
+
+## Error Handling
+```python
+def main():
+    try:
+        await email.send_password_reset_email(
+            to_email=req.get("email"),
+            token=reset_token,
+            app_name="MyApp"
+        )
+        return {"sent": True}
+    except Exception as e:
+        print(f"Email failed: {e}")
+        return {"error": "Could not send email"}, 500
+```
+
+Note: send_welcome_email silently suppresses errors so 
+registration is never blocked. All other methods raise 
+on failure — always wrap in try/except.
+
+## Email Logging
+
+Every email sent is automatically logged in your dashboard 
+under Email → Logs. Each entry records recipients, subject, 
+template used, status (PENDING → SENT or FAILED), and 
+timestamp.

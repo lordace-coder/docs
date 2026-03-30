@@ -504,23 +504,8 @@ Room-based architecture scales horizontally - each room runs independently. Desi
 
     ```python
     async def on_message():
-        action = request.get('action')
-
-        if action == 'save_progress':
-            player = room.state['players'][session.player_id]
-
-            # ✅ Save to database for persistence
-            await db.collection('player_progress').update(
-                session.player_id,
-                {
-                    'level': player['level'],
-                    'score': player['score'],
-                    'inventory': player['inventory'],
-                    'last_save': time.time()
-                }
-            )
-
-            return {'status': 'saved'}
+        # ... save progress logic ...
+        pass
     ```
   </Accordion>
 </AccordionGroup>
@@ -535,45 +520,7 @@ Room-based architecture scales horizontally - each room runs independently. Desi
 
     ```python
     async def on_connect():
-        print(f"[DEBUG] Player {session.player_id} connecting to room {request.get('room_id')}")
-
-        # ... connection logic ...
-
-        print(f"[DEBUG] Room now has {room.get_player_count()} players")
-
-        return {'type': 'welcome'}
-    ```
-  </Accordion>
-
-  <Accordion title="Test with Multiple Clients" icon="users">
-    Open multiple browser tabs to test multiplayer behavior:
-
-    ```html
-    <!-- Add debug panel to your client -->
-    <div id="debug">
-      <p>Player ID: <span id="playerId"></span></p>
-      <p>Room ID: <span id="roomId"></span></p>
-      <p>Player Count: <span id="playerCount"></span></p>
-      <p>Game Phase: <span id="gamePhase"></span></p>
-    </div>
-    ```
-  </Accordion>
-
-  <Accordion title="Monitor Performance" icon="chart-line">
-    Track tick duration to identify bottlenecks:
-
-    ```python
-    async def on_tick():
-        start_time = time.time()
-
-        # Your game logic here
-        # ...
-
-        tick_duration = time.time() - start_time
-
-        # Warn if tick is too slow
-        if tick_duration > 0.05:  # 50ms (should be < tick interval)
-            print(f"[WARNING] Slow tick: {tick_duration*1000:.2f}ms")
+        print(f"[DEBUG] Player joins")
     ```
   </Accordion>
 </AccordionGroup>

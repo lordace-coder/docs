@@ -18,10 +18,11 @@ pip install cocobase
 ### Initialize Cocobase
 
 ```python
-from cocobase import Cocobase
+from cocobase_client.client import CocoBaseClient
 
-db = Cocobase(
+db = CocoBaseClient(
     api_key="YOUR_API_KEY",
+    project_id="YOUR_PROJECT_ID",  # required for cloud functions
     base_url="https://api.cocobase.buzz"  # Optional
 )
 ```
@@ -58,22 +59,19 @@ db.delete_document("posts", "doc-id")
 
 ```python
 # Find active users older than 18
-users = db.list_documents("users", filters={
-    "status": "active",
-    "age__gt": 18
-})
+query = QueryBuilder().eq("status", "active").gt("age", 18)
+users = db.list_documents("users", query=query)
 ```
 
 ### Query Builder
 
 ```python
-from cocobase import QueryBuilder
+from cocobase_client.query import QueryBuilder
 
 query = (QueryBuilder()
-    .where("status", "active")
-    .where_greater_than("age", 18)
-    .where_contains("email", "@gmail.com")
-    .order_by_desc("createdAt")
+    .eq("status", "active")
+    .gt("age", 18)
+    .contains("email", "@gmail.com")
     .limit(10))
 
 users = db.list_documents("users", query=query)
@@ -117,20 +115,16 @@ users = db.list_documents("users", query=query)
 
 ```python
 # Sort by creation date (newest first)
-posts = db.list_documents("posts", filters={
-    "orderBy": "createdAt",
-    "order": "desc"
-})
+query = QueryBuilder().from_dict({"sort": "createdAt", "order": "desc"})
+posts = db.list_documents("posts", query=query)
 ```
 
 ### Pagination
 
 ```python
 # Get page 3 (20 items per page)
-posts = db.list_documents("posts", filters={
-    "limit": 20,
-    "offset": 40
-})
+query = QueryBuilder().limit(20).offset(40)
+posts = db.list_documents("posts", query=query)
 ```
 
 ---
@@ -196,41 +190,107 @@ print(book.title)
 
 ```python
 # Register
-db.auth.register(
-    email="user@example.com",
-    password="securePassword123"
+result = db.auth.register(
+    "user@example.com",
+    "securePassword123",
+    {"username": "johndoe"}  # optional extra data
 )
-
-# Get user after registration
-user = db.auth.get_user()
-print(f"User ID: {user.id}")
 
 # Login
-db.auth.login(
-    email="user@example.com",
-    password="securePassword123"
-)
-
-# Get user after login
-user = db.auth.get_user()
+result = db.auth.login("user@example.com", "securePassword123")
 
 # Logout
 db.auth.logout()
 
-# Check current user
-current_user = db.auth.current_user
+# Get current user
+current_user = db.auth.get_current_user()
+
+# Check authentication
+if db.auth.is_authenticated():
+    print("Logged in")
 ```
 
 ### OAuth
 
 ```python
 # Google OAuth
-db.auth.sign_in_with_google()
-user = db.auth.get_user()
+user = db.auth.login_with_google(
+    id_token="google-id-token",
+    platform="web"  # or "mobile", "ios", "android"
+)
 
 # GitHub OAuth
-db.auth.sign_in_with_github()
-user = db.auth.get_user()
+user = db.auth.login_with_github(
+    code="github-auth-code",
+    redirect_uri="https://yourapp.com/callback",
+    platform="web"
+)
+```
+
+## Advanced Auth
+
+### Register with Files
+
+```python
+result = db.auth.register_with_files(
+    email="john@example.com",
+    password="password123",
+    data={"username": "johndoe"},
+    files={"avatar": avatar_file}
+)
+```
+
+### Update User
+
+```python
+updated_user = db.auth.update_user(
+    data={"bio": "Updated bio"},
+    email="newemail@example.com"
+)
+```
+
+### Update User with Files
+
+```python
+updated_user = db.auth.update_user_with_files(
+    data={"bio": "Updated bio"},
+    files={"avatar": new_avatar_file}
+)
+```
+
+### Two-Factor Authentication (2FA)
+
+```python
+# Enable 2FA
+db.auth.enable_2fa()
+
+# Disable 2FA
+db.auth.disable_2fa()
+
+# Verify 2FA login
+user = db.auth.verify_2fa_login(
+    email="user@example.com",
+    code="123456"
+)
+```
+
+### Role Checking
+
+```python
+if db.auth.has_role("admin"):
+    print("User is an admin")
+```
+
+### List Users
+
+```python
+users = db.auth.list_users({"limit": 10, "offset": 0})
+```
+
+### Get User by ID
+
+```python
+user = db.auth.get_user_by_id("user-id")
 ```
 
 ---
@@ -243,12 +303,14 @@ The Python SDK is primarily used in Cocobase Cloud Functions.
 
 ```python
 def main():
-    from cocobase import Cocobase
+    from cocobase_client.client import CocoBaseClient
+    from cocobase_client.query import QueryBuilder
 
-    db = Cocobase()  # Auto-configured in cloud environment
+    db = CocoBaseClient()  # Auto-configured in cloud environment
 
     # Your function logic here
-    docs = db.list_documents("posts", filters={"limit": 10})
+    query = QueryBuilder().limit(10)
+    docs = db.list_documents("posts", query=query)
 
     return {
         "success": True,
@@ -260,21 +322,20 @@ def main():
 
 ```python
 def main(event):
-    from cocobase import Cocobase
+    from cocobase_client.client import CocoBaseClient
 
-    db = Cocobase()
+    db = CocoBaseClient()
 
     # Access trigger data
     document = event.get("document")
-    trigger_type = event.get("type")  # created, updated, deleted
+    trigger_type = event.get("type")
 
     if trigger_type == "created":
-        # Send welcome email
-        db.email.send(
-            to=document["data"]["email"],
-            template="welcome",
-            variables={"name": document["data"]["name"]}
-        )
+        docs = db.list_documents("users")
+        db.create_document("logs", {
+            "action": "user_created",
+            "userId": document.get("id")
+        })
 
     return {"success": True}
 ```
@@ -283,18 +344,17 @@ def main(event):
 
 ```python
 def main():
-    from cocobase import Cocobase
+    from cocobase_client.client import CocoBaseClient
+    from cocobase_client.query import QueryBuilder
     from datetime import datetime, timedelta
 
-    db = Cocobase()
+    db = CocoBaseClient()
 
     # Clean up old documents
     cutoff = (datetime.now() - timedelta(days=30)).isoformat()
 
-    old_docs = db.list_documents("logs", filters={
-        "createdAt__lt": cutoff,
-        "limit": 100
-    })
+    query = QueryBuilder().from_dict({"createdAt__lt": cutoff}).limit(100)
+    old_docs = db.list_documents("logs", query=query)
 
     for doc in old_docs:
         db.delete_document("logs", doc.id)
@@ -310,44 +370,15 @@ def main():
 ## Error Handling
 
 ```python
-from cocobase.exceptions import NotFoundError, UnauthorizedError, CocobaseError
+from cocobase_client.exceptions import CocobaseError
 
 try:
     doc = db.get_document("posts", "non-existent-id")
-except NotFoundError:
-    print("Document not found")
-except UnauthorizedError:
-    print("Not authorized")
 except CocobaseError as e:
-    print(f"Error: {e.message}")
+    print(f"Error: {e}")
 ```
 
----
 
-## Async Support
-
-```python
-import asyncio
-from cocobase import AsyncCocobase
-
-async def main():
-    db = AsyncCocobase(api_key="YOUR_API_KEY")
-
-    # Async operations
-    docs = await db.list_documents("posts")
-    doc = await db.get_document("posts", "doc-id")
-
-    # Concurrent requests
-    results = await asyncio.gather(
-        db.get_document("posts", "id1"),
-        db.get_document("posts", "id2"),
-        db.get_document("posts", "id3")
-    )
-
-    await db.close()
-
-asyncio.run(main())
-```
 
 ---
 
@@ -375,8 +406,6 @@ print(doc.data["title"])
 try:
     doc = db.get_document("posts", post_id)
     return doc
-except NotFoundError:
-    return None
 except CocobaseError as e:
     logger.error(f"Failed to get post: {e}")
     raise
@@ -387,7 +416,7 @@ except CocobaseError as e:
 ```python
 import os
 
-db = Cocobase(
+db = CocoBaseClient(
     api_key=os.environ.get("COCOBASE_API_KEY")
 )
 ```
@@ -395,22 +424,17 @@ db = Cocobase(
 ### 4. Always Set Limits
 
 ```python
+from cocobase_client.query import QueryBuilder
+
 # Good
-docs = db.list_documents("posts", filters={"limit": 20})
+query = QueryBuilder().limit(20)
+docs = db.list_documents("posts", query=query)
 
 # Bad - could return thousands
 docs = db.list_documents("posts")
 ```
 
-### 5. Use Context Managers
 
-```python
-from cocobase import Cocobase
-
-with Cocobase(api_key="YOUR_KEY") as db:
-    docs = db.list_documents("posts")
-    # Connection automatically closed
-```
 
 ---
 

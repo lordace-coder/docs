@@ -1,0 +1,140 @@
+---
+title: Realtime API
+description: Complete reference for WebSocket real-time subscriptions and broadcasting
+---
+
+# Realtime API
+
+Cocobase provides a powerful real-time engine built on WebSockets, allowing you to subscribe to data changes and build collaborative features like chat and live notifications.
+
+## Overview
+
+Key features:
+- **Collection Watching**: Subscribe to any collection to receive live updates.
+- **Broadcast Messaging**: Send messages to all connected clients in a room.
+- **Filtering**: Only receive events that match your specific criteria.
+- **Reconnection**: Automatic handled by SDKs, manual for raw WebSockets.
+- **Platform Support**: Works on Web, Mobile (Flutter), and Backend (Python/Go).
+
+---
+
+## Connection
+
+Connect to the Cocobase realtime server.
+
+- **Endpoint**: `wss://api.cocobase.buzz/realtime`
+
+### 1. Connect and Authenticate
+After establishing the WebSocket connection, you must send an authentication message.
+
+```json
+{
+  "type": "auth",
+  "token": "YOUR_API_KEY_OR_JWT"
+}
+```
+
+### 2. Subscribe to Collection
+Once authenticated, join a collection to start receiving events.
+
+```json
+{
+  "type": "subscribe",
+  "collection": "posts",
+  "filters": { "status": "published" }
+}
+```
+
+---
+
+## Event Types
+
+When a change occurs, you will receive an event message.
+
+| Event Type | Description |
+|------------|-------------|
+| `created` | A new document was added to the collection. |
+| `updated` | An existing document was modified. |
+| `deleted` | A document was removed. |
+| `broadcast` | A custom message sent to the room. |
+
+### Event Message Format
+```json
+{
+  "type": "event",
+  "collection": "posts",
+  "event": "created",
+  "document": {
+    "id": "doc_123",
+    "data": { "title": "New Post" }
+  }
+}
+```
+
+---
+
+## Broadcast & Rooms
+
+Rooms allow you to isolate real-time communication for specific topics or entities (like a chat room).
+
+### Join a Room
+```json
+{
+  "type": "join",
+  "room": "chat-123"
+}
+```
+
+### Send a Broadcast
+Send a custom message to everyone in the same room.
+```json
+{
+  "type": "broadcast",
+  "room": "chat-123",
+  "message": { "user": "John", "text": "Hello everyone!" }
+}
+```
+
+---
+
+## Example (JavaScript)
+
+```javascript
+const ws = new WebSocket('wss://api.cocobase.buzz/realtime');
+
+ws.onopen = () => {
+  // Auth
+  ws.send(JSON.stringify({ type: 'auth', token: 'YOUR_KEY' }));
+  
+  // Subscribe
+  ws.send(JSON.stringify({ type: 'subscribe', collection: 'messages' }));
+};
+
+ws.onmessage = (msg) => {
+  const data = JSON.parse(msg.data);
+  if (data.type === 'event') {
+    console.log(`New message: ${data.document.data.text}`);
+  }
+};
+```
+
+---
+
+## Reconnection Logic
+
+When using the raw WebSocket API:
+1. **Exponential Backoff**: Pulse connection attempts with increasing delays.
+2. **State Resync**: Re-subscribe to all previously watched collections upon reconnection.
+3. **Heartbeat**: Send periodic ping messages if the connection is idle to prevent timeout.
+
+---
+
+## SDK Integration
+
+While you can use raw WebSockets, we recommend using the Cocobase SDKs which handle authentication, reconnection, and filtering automatically.
+
+```javascript
+db.watchCollection('posts', (event) => {
+  console.log('Update received:', event.data);
+});
+```

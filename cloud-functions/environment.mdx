@@ -1,360 +1,297 @@
 ---
 title: Execution Environment
-description: Complete guide to request handling and response types in cloud functions
+description: Complete reference for cloud function globals and available services
 ---
 
-# Cloud Function Environment
+# Execution Environment
 
-Complete guide to the execution environment, request handling, and response types in CocoBase cloud functions.
+Cloud functions execute in a secure Python environment 
+with access to these pre-injected globals — no imports needed:
 
-## Overview
+| Global | Description |
+|--------|-------------|
+| req | Request object (params, payload, headers, user) |
+| db | Database service (queries, CRUD, relationships) |
+| http | HTTP client (external API requests) |
+| auth | Authentication service (JWT tokens) |
+| render | Template renderer (HTML with Jinja2) |
+| use() | Module system (import other functions) |
+| queue | Background tasks (non-blocking execution) |
+| config | Project configuration and cron payloads |
+| email | Email service (send emails) |
 
-CocoBase cloud functions execute in a sandboxed Python 3.10 environment with access to:
-
-- **Request object** (`request` or `req`) - Access to query params, payload, headers, user info
-- **Database service** (`db`) - Query and manage your data
-- **Template renderer** (`render`) - Render HTML with Jinja2
-- **Environment object** (`env`) - Project and environment info
-
----
-
-## Function Execution
-
-### Execution URL
-
-When you create a cloud function, you get an execution URL:
-
-```
-https://api.cocobase.buzz/functions/{function_id}/execute
-```
-
-### HTTP Methods
-
-**GET Request:**
-
-```bash
-# Query parameters in URL
-curl "https://api.cocobase.buzz/functions/abc123/execute?name=John&age=25"
-```
-
-**POST Request:**
-
-```bash
-# JSON payload in body
-curl -X POST https://api.cocobase.buzz/functions/abc123/execute \
-  -H "Content-Type: application/json" \
-  -d '{"name": "John", "age": 25}'
-```
-
----
-
-## The `request` Object
-
-The `request` object (also available as `req`) provides access to incoming request data.
-
-### Properties
-
+## Request Object (req)
 ```python
 def main():
-    # Get data from POST body or GET query params
-    name = req.get('name', 'Guest')
-    age = req.get('age', 0)
+    # Query parameters (GET)
+    name = req.get("name")
+    age = req.get("age", 18)  # with default
 
-    # Access all payload data
-    all_data = req.json()
+    # Payload (POST/PUT)
+    email = req.payload.get("email")
+    data = req.payload  # full payload
 
-    # Get query parameters (GET requests)
-    page = req.query_params.get('page', '1')
+    # Headers
+    auth_header = req.headers.get("Authorization")
 
-    # Access headers
-    auth_token = req.headers.get('authorization', '')
+    # Authenticated user
+    user_id = req.user["id"] if req.user else None
+    user_email = req.user["email"] if req.user else None
 
-    # Check HTTP method
-    method = req.method  # 'GET' or 'POST'
-
-    # Request timestamp
-    timestamp = req.timestamp
-
-    # Current user (if authenticated)
-    user = req.user  # AppUser object or None
+    # HTTP method
+    method = req.method  # GET, POST, PUT, DELETE
 
     # Project ID
     project_id = req.proj
+
+    return {"name": name, "user": user_id}
 ```
 
-### Methods
-
-#### `request.get(key, default=None)`
-
-Get value from payload (POST) or query params (GET):
-
+## Database (db)
 ```python
-def main():
-    # From POST body: {"name": "John"}
-    # Or GET query: ?name=John
-    name = req.get('name', 'Anonymous')
+# Query documents
+result = db.query("users", limit=10)
+users = result["data"]
 
-    return {"greeting": f"Hello, {name}!"}
+# Query with filters
+result = db.query("users", age_gte="18", limit=100)
+
+# Find one document
+user = db.find_one("users", id="user123")
+user = db.find_one("users", email="john@example.com")
+
+# Count documents
+count = db.count_documents("users")
+count = db.count_documents("users", status="active")
+
+# Create document
+doc = db.create_document("users", {
+    "name": "John",
+    "email": "john@example.com"
+})
+
+# Update document
+updated = db.update_document("users", "user123", {
+    "name": "John Doe"
+})
+
+# Delete document
+deleted = db.delete_document("users", "user123")
 ```
 
-#### `request.json()`
-
-Get entire payload as dictionary:
-
+## HTTP Client (http)
 ```python
-def main():
-    data = req.json()
-    # Returns: {"name": "John", "age": 25, "email": "john@example.com"}
+# GET request
+response = http.get("https://api.example.com/users")
+users = response.json()
 
-    return {
-        "received": data,
-        "keys": list(data.keys())
-    }
+# GET with params and headers
+response = http.get("https://api.example.com/users",
+                   params={"limit": 10},
+                   headers={"Authorization": "Bearer token"})
+
+# POST request
+response = http.post("https://api.example.com/users",
+                    json={"name": "John"})
+
+# PUT, PATCH, DELETE
+response = http.put("https://api.example.com/users/123",
+                   json={"name": "John Doe"})
+
+response = http.patch("https://api.example.com/users/123",
+                     json={"status": "active"})
+
+response = http.delete("https://api.example.com/users/123")
+
+# Response object
+status = response.status_code
+data = response.json()
+text = response.text
 ```
 
-#### `request.send_mail()`
-
-Send email using CocoMailer integration:
-
+## Authentication (auth)
 ```python
+# Generate token for user
+token = auth.create_token(
+    user_id="user123",
+    email="john@example.com",
+    expires_in=3600  # 1 hour
+)
+
+# Verify token
+token = req.headers.get("Authorization", "").replace("Bearer ", "")
+try:
+    payload = auth.verify_token(token)
+    user_id = payload["user_id"]
+except Exception as e:
+    return {"error": "Invalid token"}, 401
+```
+
+## Template Rendering (render)
+```python
+# Render HTML string
 def main():
-    # Send with template
-    result = req.send_mail(
-        to="user@example.com",
-        subject="Welcome!",
-        template_id="welcome-template",
-        context={
-            "username": "John",
-            "activation_link": "https://..."
-        }
+    html = render.render_html(
+        "<h1>Hello {{name}}!</h1>",
+        context={"name": "John"}
     )
+    return html
 
-    # Send with plain body
-    result = req.send_mail(
-        to=["user1@example.com", "user2@example.com"],
-        subject="Notification",
-        body="<h1>Hello!</h1><p>This is your notification.</p>"
+# Render template file
+def main():
+    html = render.render_template(
+        "welcome.html",
+        context={"name": "John", "email": "john@example.com"}
     )
-
-    return {"email_sent": result}
+    return html
 ```
 
-### User Authentication
-
-Access authenticated user data:
-
+## Module System (use())
 ```python
+# functions/utils.py
+def calculate_tax(amount):
+    return amount * 0.08
+
+def format_currency(amount):
+    return f"${amount:.2f}"
+```
+```python
+# functions/checkout.py
 def main():
-    user = req.user
-
-    if not user:
-        return {"error": "Authentication required"}, 401
-
-    # User properties
-    user_id = user.id
-    email = user.email
-    user_data = user.data  # Custom user fields
-    roles = user.roles
-
+    utils = use("utils")
+    
+    subtotal = 100.00
+    tax = utils.calculate_tax(subtotal)
+    total = subtotal + tax
+    
     return {
-        "user_id": user_id,
-        "email": email,
-        "roles": roles
+        "subtotal": utils.format_currency(subtotal),
+        "tax": utils.format_currency(tax),
+        "total": utils.format_currency(total)
     }
 ```
 
----
-
-## Response Types
-
-### JSON Response (Default)
-
-Return a dictionary to send JSON:
-
+## Queue (queue)
 ```python
+def send_email(user_id):
+    """Runs in background"""
+    user = db.find_one("users", id=user_id)
+    # send email...
+
 def main():
-    return {
-        "success": True,
-        "message": "Operation completed",
-        "data": {"id": "123", "name": "John"}
-    }
+    user_id = req.get("user_id")
+    
+    # Queue background task - returns immediately
+    queue.add("send_email", user_id=user_id)
+    
+    # Call another deployed function
+    queue.call_function("analytics-service",
+                       event="signup",
+                       user_id=user_id)
+    
+    return {"queued": True}
 ```
 
-### HTML Response
-
-Use `render.render_html()` for HTML pages:
-
+## Configuration (config)
 ```python
 def main():
-    html = '''
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>My Page</title>
-    </head>
-    <body>
-        <h1>Hello World!</h1>
-    </body>
-    </html>
-    '''
-
-    return render.render_html(html)
+    api_key = config.get("api_key")
+    environment = config.get("environment", "production")
+    
+    # Access cron job payload
+    report_type = config.get("report_type")
+    
+    return {"environment": environment}
 ```
 
-### HTML with Template Variables
+## Available Standard Library Modules
 
+- json — JSON encoding/decoding
+- datetime, timedelta — Date and time
+- math — Mathematical functions
+- re — Regular expressions
+- random — Random number generation
+- secrets — Cryptographically secure random
+- time — Time utilities
+- hashlib — Hash functions
+- uuid — UUID generation
+- base64 — Base64 encoding/decoding
+- urllib — URL parsing
+- collections — Counter, defaultdict
+- itertools — Iterator functions
+- functools — Higher-order functions
+- decimal — Decimal precision
+- statistics — Statistical functions
+- dataclasses — Dataclasses
+
+## WebSocket Globals
+
+WebSocket functions have additional objects:
 ```python
-def main():
-    posts = db.query("posts", status="published", limit=10)
+# session object
+player_id = session.player_id
+user = session.user
+session.set("score", 100)
+score = session.get("score")
+latency = session.latency
 
-    html = '''
-    <!DOCTYPE html>
-    <html>
-    <body>
-        <h1>Blog Posts</h1>
-        {% for post in posts %}
-        <article>
-            <h2>{{ post.title }}</h2>
-            <p>By {{ post.author.name }}</p>
-        </article>
-        {% endfor %}
-    </body>
-    </html>
-    '''
+# room object
+room_id = room.id
+room.broadcast({"event": "update", "data": 123})
+room.send_to(player_id, {"message": "Hello"})
+players = room.get_players()
+count = room.get_player_count()
+room.state["game_started"] = True
+room.start_game_loop()
+room.stop_game_loop()
 
-    return render.render_html(html, {
-        'posts': posts['data']
-    })
+# request object (WebSocket)
+event_type = request.get("type")
+position = request.get("position")
+message = request.json()
 ```
 
-### Status Codes
+## Security & Sandboxing
 
-Return a tuple with status code:
+Not available in cloud functions:
+- File system access (open, os.listdir)
+- System commands (os.system, subprocess)
+- Network sockets (use http instead)
+- Process manipulation
 
+Available:
+- Safe built-ins (len, str, int, dict etc.)
+- Standard library modules listed above
+- HTTP requests via http object
+- Database access via db object
+
+## Timeouts
+
+| Operation | Timeout |
+|-----------|---------|
+| Function execution | 20 seconds |
+| HTTP requests | 10 seconds |
+| Database queries | No explicit limit |
+
+## Best Practices
 ```python
-def main():
-    user = req.user
+# Always handle missing data with defaults
+name = req.get("name", "Guest")
 
-    if not user:
-        return {"error": "Unauthorized"}, 401
+# Always check authentication when needed
+if not req.user:
+    return {"error": "Unauthorized"}, 401
 
-    if not user.is_admin:
-        return {"error": "Forbidden"}, 403
+# Always use try/except
+try:
+    result = risky_operation()
+except Exception as e:
+    return {"error": str(e)}, 500
 
-    return {"success": True}, 200
+# Return structured responses
+return {
+    "success": True,
+    "data": {"id": 123},
+    "timestamp": datetime.utcnow().isoformat()
+}
 ```
-
----
-
-## Environment Variables
-
-Access environment and project information:
-
-```python
-def main():
-    # Project ID
-    project_id = env.project_id
-
-    # Execution environment
-    runtime = env.runtime  # "python3.10"
-
-    # Static files base URL
-    static_url = env.static_base_url
-
-    return {
-        "project": project_id,
-        "runtime": runtime
-    }
-```
-
----
-
-## Available Python Modules
-
-Cloud functions have access to these Python standard library modules without import statements:
-
-| Module | Description | Common Uses |
-|--------|-------------|-------------|
-| `json` | JSON encoding/decoding | Parse API responses, serialize data |
-| `datetime` | Date and time class | Current time, timestamps |
-| `timedelta` | Time duration class | Add/subtract time, expiration |
-| `time` | Time utilities | Delays, timestamps, timing |
-| `math` | Mathematical functions | Calculations, rounding |
-| `re` | Regular expressions | Pattern matching, validation |
-| `secrets` | Cryptographically secure random | OTP generation, tokens, passwords |
-| `uuid` | UUID generation | Unique identifiers |
-| `hashlib` | Hash functions | MD5, SHA256, data integrity |
-| `base64` | Base64 encoding | Encode/decode binary data |
-| `string` | String constants | ASCII letters, digits, punctuation |
-| `collections` | Data structures | Counter, defaultdict, deque |
-
-### Examples
-
-**OTP Generation (Secure):**
-
-```python
-def main():
-    # Generate 6-digit OTP (cryptographically secure)
-    otp = ''.join([str(secrets.randbelow(10)) for _ in range(6)])
-
-    # Send via email
-    req.send_mail(
-        to=req.get('email'),
-        subject="Your OTP Code",
-        body=f"Your OTP is: {otp}"
-    )
-
-    return {"otp_sent": True}
-```
-
-**Email Validation:**
-
-```python
-def main():
-    email = req.get('email')
-
-    # Validate email format
-    email_pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-    is_valid = bool(re.match(email_pattern, email))
-
-    if not is_valid:
-        return {"error": "Invalid email format"}, 400
-
-    return {"valid": True}
-```
-
-**Password Hashing:**
-
-```python
-def main():
-    password = req.get('password')
-
-    # Hash password with SHA256
-    hashed = hashlib.sha256(password.encode()).hexdigest()
-
-    return {"hash": hashed}
-```
-
----
-
-## Error Handling
-
-```python
-def main():
-    try:
-        result = some_operation()
-        return {"result": result}
-    except ValueError as e:
-        return {"error": str(e)}, 400
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        return {"error": "Internal server error"}, 500
-```
-
----
-
-## Next Steps
-
-- [Quick Reference](/cloud-functions/quick-reference) - Cheat sheet for common patterns
-- [Examples](/cloud-functions/examples) - Real-world code examples
-- [Main Features](/features/cloud-functions) - Overview and advanced topics
