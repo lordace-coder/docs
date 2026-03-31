@@ -72,14 +72,20 @@ const result = await db.auth.login({
     })
 
     // Login
-    session, err := client.Login(ctx, "user@example.com", "securePassword123")
+    err = client.Login(ctx, "user@example.com", "securePassword123")
+    if err != nil {
+        log.Fatal(err)
+    }
+    // Get user separately
+    user, err = client.GetCurrentUser(ctx)
     ```
 
   </Tab>
 
   <Tab title="Python">
     ```python
-    db = Cocobase(api_key="YOUR_API_KEY")
+    from cocobase_client.client import CocoBaseClient
+    db = CocoBaseClient(api_key="YOUR_API_KEY")
 
     # Register a new user
     user = db.auth.register(
@@ -338,13 +344,12 @@ if (db.auth.isAuthenticated()) {
   <Tab title="Go">
     ```go
     // Login
-    session, err := client.Login(ctx, "alice@example.com", "SecurePass123!")
+    err = client.Login(ctx, "alice@example.com", "SecurePass123!")
     if err != nil {
         log.Fatal(err)
     }
-
-    fmt.Printf("Token: %s\n", session.Token)
-    fmt.Printf("User: %+v\n", session.User)
+    user, err := client.GetCurrentUser(ctx)
+    fmt.Printf("Email: %s\n", user.Email)
 
     // Token is automatically stored and used for future requests
     ```
@@ -491,7 +496,7 @@ console.log("Updated user:", updatedUser);
   <Tab title="Dart">
     ```dart
     // Update user profile
-    final updatedUser = await db.updateProfile({
+    final updatedUser = await db.updateUser(data: {
       'full_name': 'Alice Johnson Smith',
       'bio': 'Full-stack developer',
       'avatar': 'https://example.com/avatar.jpg',
@@ -509,15 +514,10 @@ console.log("Updated user:", updatedUser);
   <Tab title="Go">
     ```go
     // Update user profile
-    updatedUser, err := client.UpdateProfile(ctx, map[string]any{
+    updatedUser, err := client.UpdateUser(ctx, map[string]interface{}{
         "full_name": "Alice Johnson Smith",
-        "bio":       "Full-stack developer",
-        "avatar":    "https://example.com/avatar.jpg",
-        "preferences": map[string]any{
-            "theme":    "dark",
-            "language": "en",
-        },
-    })
+        "bio": "Full-stack developer",
+    }, nil, nil)
     ```
   </Tab>
 
@@ -628,22 +628,8 @@ curl -X POST https://api.cocobase.buzz/auth-collections/logout \
     ```
   </Tab>
 
-  <Tab title="Dart">
-    ```dart
-    await db.auth.changePassword(
-      oldPassword: 'oldPassword123',
-      newPassword: 'newPassword456',
-    );
-    ```
-  </Tab>
-
   <Tab title="Go">
-    ```go
-    err := client.ChangePassword(ctx, "oldPassword123", "newPassword456")
-    if err != nil {
-        log.Fatal(err)
-    }
-    ```
+    <Note>This feature is not yet available in the Go SDK.</Note>
   </Tab>
 
   <Tab title="Python">
@@ -677,17 +663,12 @@ curl -X POST https://api.cocobase.buzz/auth-collections/logout \
 
   <Tab title="Dart">
     ```dart
-    await db.auth.requestPasswordReset(email: 'user@example.com');
+    await db.requestPasswordReset(email: 'user@example.com');
     ```
   </Tab>
 
   <Tab title="Go">
-    ```go
-    err := client.RequestPasswordReset(ctx, "user@example.com")
-    if err != nil {
-        log.Fatal(err)
-    }
-    ```
+    <Note>This feature is not yet available in the Go SDK.</Note>
   </Tab>
 
   <Tab title="Python">
@@ -720,7 +701,7 @@ curl -X POST https://api.cocobase.buzz/auth-collections/logout \
 
   <Tab title="Dart">
     ```dart
-    await db.auth.resetPassword(
+    await db.resetPassword(
       token: 'reset_token_from_email',
       newPassword: 'newPassword123',
     );
@@ -728,12 +709,7 @@ curl -X POST https://api.cocobase.buzz/auth-collections/logout \
   </Tab>
 
   <Tab title="Go">
-    ```go
-    err := client.ResetPassword(ctx, "reset_token_from_email", "newPassword123")
-    if err != nil {
-        log.Fatal(err)
-    }
-    ```
+    <Note>This feature is not yet available in the Go SDK.</Note>
   </Tab>
 
   <Tab title="Python">
@@ -811,17 +787,7 @@ Authenticate users with Google, GitHub, and other OAuth providers:
   </Tab>
 
   <Tab title="Go">
-    ```go
-    // Initiate Google OAuth flow
-    authUrl, err := client.GetOAuthURL(ctx, "google", cocobase.OAuthOptions{
-        RedirectURL: "https://yourapp.com/auth/callback",
-        Scopes:      []string{"email", "profile"},
-    })
-
-    // Handle callback
-    session, err := client.HandleOAuthCallback(ctx, "google", authorizationCode)
-    ```
-
+    <Note>This feature is not yet available in the Go SDK.</Note>
   </Tab>
 
   <Tab title="Python">
@@ -890,35 +856,8 @@ Authenticate users with Google, GitHub, and other OAuth providers:
 
   </Tab>
 
-  <Tab title="Dart">
-    ```dart
-    // Enable 2FA
-    final result = await db.enable2FA();
-
-    print('QR Code: ${result.qrCode}');
-    print('Secret: ${result.secret}');
-
-    // Verify 2FA
-    await db.verify2FA(code: '123456');
-    ```
-
-  </Tab>
-
   <Tab title="Go">
-    ```go
-    // Enable 2FA
-    twoFASetup, err := client.Enable2FA(ctx)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    fmt.Printf("QR Code: %s\n", twoFASetup.QRCode)
-    fmt.Printf("Secret: %s\n", twoFASetup.Secret)
-
-    // Verify 2FA
-    err = client.Verify2FA(ctx, "123456")
-    ```
-
+    <Note>This feature is not yet available in the Go SDK.</Note>
   </Tab>
 
   <Tab title="Python">
@@ -979,40 +918,8 @@ if (result.requires_2fa) {
 
   </Tab>
 
-  <Tab title="Dart">
-    ```dart
-    try {
-      await db.login(
-        email: 'user@example.com',
-        password: 'password123',
-      );
-    } catch (e) {
-      if (e.code == '2FA_REQUIRED') {
-        // Prompt user for 2FA code
-        final code = await get2FACodeFromUser();
-
-        // Complete login with 2FA
-        await db.verify2FALogin(code: code);
-      }
-    }
-    ```
-
-  </Tab>
-
   <Tab title="Go">
-    ```go
-    _, err := client.Login(ctx, "user@example.com", "password123")
-    if err != nil {
-        if errors.Is(err, cocobase.Err2FARequired) {
-            // Prompt user for 2FA code
-            code := get2FACodeFromUser()
-
-            // Complete login with 2FA
-            err = client.Verify2FALogin(ctx, code)
-        }
-    }
-    ```
-
+    <Note>This feature is not yet available in the Go SDK.</Note>
   </Tab>
 
   <Tab title="Python">
@@ -1053,6 +960,61 @@ curl -X POST https://api.cocobase.buzz/auth-collections/verify-2fa-login \
 
   </Tab>
 </Tabs>
+
+## Email Verification
+
+Verify user email addresses to ensure account authenticity and improve security.
+
+<Tabs>
+  <Tab title="JavaScript">
+    ```typescript
+    // Request verification email for current user
+    await db.auth.requestEmailVerification();
+
+    // Verify email with token from link
+    const token = new URLSearchParams(window.location.search).get('token');
+    if (token) {
+      await db.auth.verifyEmail(token);
+      console.log("Email verified successfully");
+    }
+
+    // Resend if needed
+    await db.auth.resendVerificationEmail();
+    ```
+  </Tab>
+
+  <Tab title="Python">
+    ```python
+    # Request verification
+    db.auth.request_email_verification()
+
+    # Verify email
+    db.auth.verify_email("verification_token_from_email")
+
+    # Resend
+    db.auth.resend_verification_email()
+    ```
+  </Tab>
+
+  <Tab title="HTTP">
+    ```bash
+    # Request verification
+    curl -X POST https://api.cocobase.buzz/auth/request-verification \
+      -H "Authorization: Bearer YOUR_USER_TOKEN"
+
+    # Verify email
+    curl -X POST https://api.cocobase.buzz/auth/verify-email \
+      -H "Content-Type: application/json" \
+      -d '{
+        "token": "verification_token_from_email"
+      }'
+    ```
+  </Tab>
+</Tabs>
+
+<Note>
+  Email verification can be enforced globally in your project settings. When enabled, users will have limited access until their email is verified.
+</Note>
 
 ## Role-Based Access Control
 
@@ -1269,23 +1231,19 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> login(String email, String password) async {
-    final session = await _db.login(email: email, password: password);
-    _user = session.user;
+    await _db.login(email, password);
+    _user = await _db.getCurrentUser();
     notifyListeners();
   }
 
   Future<void> register(String email, String password, Map<String, dynamic>? data) async {
-    final user = await _db.register(
-      email: email,
-      password: password,
-      data: data,
-    );
-    _user = user;
+    await _db.register(email, password, data: data);
+    _user = await _db.getCurrentUser();
     notifyListeners();
   }
 
   Future<void> logout() async {
-    await _db.logout();
+    _db.logout();
     _user = null;
     notifyListeners();
   }
@@ -1385,17 +1343,14 @@ Common authentication errors and how to handle them:
 
   <Tab title="Go">
     ```go
-    _, err := client.Login(ctx, email, password)
+    err := client.Login(ctx, email, password)
     if err != nil {
-        switch {
-        case errors.Is(err, cocobase.ErrInvalidCredentials):
-            log.Println("Invalid email or password")
-        case errors.Is(err, cocobase.Err2FARequired):
-            log.Println("2FA code required")
-        case errors.Is(err, cocobase.ErrUserNotFound):
-            log.Println("User not found")
-        default:
-            log.Printf("Authentication error: %v", err)
+        var apiErr *cocobase.APIError
+        if errors.As(err, &apiErr) {
+            fmt.Println("Status:", apiErr.StatusCode)
+            fmt.Println("Error:", apiErr.Body)
+        } else {
+            fmt.Println("Error:", err)
         }
     }
     ```

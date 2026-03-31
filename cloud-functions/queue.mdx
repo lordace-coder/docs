@@ -1,0 +1,142 @@
+---
+title: Queue System
+description: Run background tasks without blocking your function response
+---
+
+# Queue System
+
+Run background tasks **after** your function returns to the 
+user. Perfect for sending emails, processing images, updating 
+analytics, or calling external APIs without making users wait.
+
+## Overview
+
+Key features:
+- Non-blocking — returns immediately to the user
+- Fire-and-forget — no waiting for completion
+- Works in both HTTP and WebSocket functions
+- Not persisted — lost on server restart
+
+## Basic Usage
+
+### Queue a Local Function
+```python
+def send_welcome_email(user_email):
+    """Background task - sends email"""
+    http.post("https://api.sendgrid.com/send", json={
+        "to": user_email,
+        "template": "welcome"
+    })
+
+def main():
+    email = req.get("email")
+    db.create_document("users", {"email": email})
+    
+    # Queue email (runs after return)
+    queue.add("send_welcome_email", user_email=email)
+    
+    # Returns immediately
+    return {"success": True}
+```
+
+### Call Another Cloud Function
+```python
+def main():
+    order_id = create_order()
+
+    # Call another deployed function in background
+    queue.call_function("email-service",
+                       template="order_confirmation",
+                       order_id=order_id)
+
+    queue.call_function("inventory-service",
+                       action="reserve",
+                       order_id=order_id)
+
+    return {"order_id": order_id}
+```
+
+## API Reference
+
+### queue.add(function_name, **params)
+Queue a local function defined in the same file.
+```python
+queue.add("process_data",
+         user_id="123",
+         action="update")
+```
+
+### queue.call_function(function_name, **params)
+Call another deployed cloud function in the background.
+```python
+queue.call_function("analytics-service",
+                   event="signup",
+                   user_id="123")
+```
+
+## Error Handling
+
+Queue tasks that fail are not retried automatically. 
+Handle errors inside the queued function:
+```python
+def risky_task(user_id):
+    try:
+        result = http.post("https://api.example.com/notify",
+                         json={"user_id": user_id})
+        print(f"Success: {user_id}")
+    except Exception as e:
+        print(f"Task failed: {e}")
+        db.create_document("failed_tasks", {
+            "user_id": user_id
+        })
+```
+
+## Common Patterns
+
+### User Registration
+```python
+def main():
+    email = req.get("email")
+    user_id = create_user(email)
+
+    queue.add("send_welcome_email", email=email)
+    queue.add("create_preferences", user_id=user_id)
+    queue.add("track_signup", user_id=user_id)
+
+    return {"user_id": user_id}
+```
+
+### Order Processing
+```python
+def main():
+    order_id = create_order(req.get("items"))
+
+    queue.add("send_confirmation", order_id=order_id)
+    queue.add("reserve_inventory", order_id=order_id)
+    queue.call_function("shipping-service", order_id=order_id)
+
+    return {"order_id": order_id}
+```
+
+## Limitations
+
+| Limit | Value |
+|-------|-------|
+| Max tasks per execution | 100 |
+| Task timeout | 20 seconds |
+| Persistence | Not persisted (lost on restart) |
+| Retry on failure | No automatic retry |
+
+## When to Use Queue
+
+Use queue for:
+- Sending emails after signup/purchase
+- Updating analytics after an action
+- Notifying external services
+- Any non-critical background work
+
+Do not use queue for:
+- Critical operations that must succeed
+- Long-running tasks (use cron jobs)
+- Tasks that depend on each other in order
+- Recurring/scheduled tasks (use cron jobs)

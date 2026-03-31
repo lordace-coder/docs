@@ -1,147 +1,261 @@
 ---
-title: API Authentication
-description: How to authenticate with the Cocobase API
+title: Authentication
+description: Complete reference for Cocobase authentication API endpoints and patterns
 ---
 
-# API Authentication
+# Authentication
 
-Learn how to authenticate your requests to the Cocobase API.
+Cocobase provides a robust authentication system supporting both administrative API keys and per-user JWT tokens.
 
-## API Key Authentication
+## Authentication Methods
 
-Include your API key in the `Authorization` header:
+### API Key Authentication
+API keys are used for server-side operations and administrative tasks.
+- **Header**: `X-API-Key: your_api_key` or `Authorization: Bearer your_api_key`
+- **Use Case**: Cloud functions, backend integrations, administrative scripts.
 
-```bash
-Authorization: Bearer YOUR_API_KEY
-```
+### JWT Token Authentication
+User tokens are obtained after login and are used for client-side user operations.
+- **Header**: `Authorization: Bearer <jwt_token>`
+- **Use Case**: Frontend applications, mobile apps, user-specific data access.
 
-### Example Request
+---
 
-```bash
-curl https://api.cocobase.buzz/collections/posts \
-  -H "Authorization: Bearer sk_live_abc123..."
-```
+## Sign Up
 
-## Getting Your API Key
+Create a new user account.
 
-1. Log in to [Cocobase Dashboard](https://cocobase.buzz/dashboard)
-2. Navigate to **Settings** > **API Keys**
-3. Click **Create New Key**
-4. Copy the key (it won't be shown again)
+### Endpoint
+`POST /auth-collections/signup`
 
-## API Key Types
-
-| Type | Prefix | Use Case |
-|------|--------|----------|
-| Live | `sk_live_` | Production applications |
-| Test | `sk_test_` | Development and testing |
-
-## Security Best Practices
-
-### Never Expose Keys in Client Code
-
-```javascript
-// BAD - Key exposed in frontend
-const db = new Cocobase({
-  apiKey: "sk_live_abc123", // Never do this!
-});
-
-// GOOD - Use environment variables
-const db = new Cocobase({
-  apiKey: process.env.COCOBASE_API_KEY,
-});
-```
-
-### Use Different Keys per Environment
-
-- Development: `sk_test_...`
-- Staging: `sk_test_...`
-- Production: `sk_live_...`
-
-### Rotate Keys Regularly
-
-1. Generate a new key in the dashboard
-2. Update your applications
-3. Revoke the old key
-
-## User Authentication Token
-
-For user-specific operations, you can also authenticate using a user JWT token:
-
-```bash
-Authorization: Bearer USER_JWT_TOKEN
-```
-
-User tokens are obtained after login:
-
-```bash
-curl -X POST https://api.cocobase.buzz/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "user@example.com", "password": "password123"}'
-```
-
-Response:
-
+### Request Body
 ```json
 {
-  "success": true,
+  "email": "user@example.com",
+  "password": "securePassword123",
   "data": {
-    "token": "eyJhbGciOiJIUzI1NiIs...",
-    "user": {
-      "id": "user_123",
-      "email": "user@example.com"
-    }
+    "username": "johndoe",
+    "name": "John Doe"
   }
 }
 ```
 
-## Error Responses
-
-### Invalid API Key
-
+### Response
 ```json
 {
-  "success": false,
-  "error": {
-    "code": "INVALID_API_KEY",
-    "message": "The provided API key is invalid"
-  }
-}
-```
-
-### Missing Authorization
-
-```json
-{
-  "success": false,
-  "error": {
-    "code": "UNAUTHORIZED",
-    "message": "Authorization header is required"
-  }
-}
-```
-
-### Expired Token
-
-```json
-{
-  "success": false,
-  "error": {
-    "code": "TOKEN_EXPIRED",
-    "message": "The authentication token has expired"
+  "access_token": "eyJhbGciOiJIUzI1NiIs...",
+  "user": {
+    "id": "user_abc123",
+    "email": "user@example.com",
+    "data": { "username": "johndoe" }
   }
 }
 ```
 
 ---
 
-## Next Steps
+## Login
 
-<CardGroup cols="2">
-  <Card title="Collections API" icon="database" href="/api-reference/collections/create">
-    Start creating documents
-  </Card>
-  <Card title="Auth API" icon="lock" href="/api-reference/auth/register">
-    User authentication
-  </Card>
-</CardGroup>
+Authenticate an existing user.
+
+### Endpoint
+`POST /auth-collections/login`
+
+### Request Body
+```json
+{
+  "email": "user@example.com",
+  "password": "securePassword123"
+}
+```
+
+### Response
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIs...",
+  "user": {
+    "id": "user_abc123",
+    "email": "user@example.com"
+  }
+}
+```
+
+---
+
+## Get Current User
+
+Retrieve the profile of the currently authenticated user.
+
+### Endpoint
+`GET /auth-collections/user`
+
+### Headers
+`Authorization: Bearer <jwt_token>`
+
+---
+
+## Update User
+
+Update the current user's data. Supports atomic array operations.
+
+### Endpoint
+`PATCH /auth-collections/user`
+
+### Atomic Array Operations
+Use `$append` and `$remove` to modify array fields (like followers/following) without fetching-and-saving.
+
+#### Follow a User ($append)
+```json
+{
+  "data": {
+    "$append": { "following_ids": "user_target_456" }
+  }
+}
+```
+
+#### Unfollow a User ($remove)
+```json
+{
+  "data": {
+    "$remove": { "following_ids": "user_target_456" }
+  }
+}
+```
+
+### Update with File Upload
+To update a user with files (e.g., avatar), use `multipart/form-data`.
+```bash
+curl -X PATCH https://api.cocobase.buzz/auth-collections/user \
+  -H "Authorization: Bearer <token>" \
+  -F "data={\"bio\": \"New bio\"}" \
+  -F "avatar=@/path/to/image.jpg"
+```
+
+---
+
+## Change Password
+
+Update the user's password.
+
+### Endpoint
+`POST /auth-collections/change-password`
+
+### Request Body
+```json
+{
+  "old_password": "currentPassword123",
+  "new_password": "newSecurePassword456"
+}
+```
+
+---
+
+## List Users
+
+List all users in the project. Requires API Key.
+
+### Endpoint
+`GET /auth-collections/users`
+
+### Query Parameters
+- `limit`: Number of users to return
+- `offset`: Skip results for pagination
+- `role`: Filter by role
+- `email_contains`: Search by email content
+
+---
+
+## Get User by ID
+
+Retrieve a specific user's public profile.
+
+### Endpoint
+`GET /auth-collections/users/{id}`
+
+---
+
+## OAuth Authentication
+
+Cocobase supports Google and Apple OAuth.
+
+### 1. Get OAuth Google URL
+`GET /auth-collections/oauth/google?redirect_uri=https://yourapp.com/callback`
+
+### 2. Verify Google Login
+`POST /auth-collections/verify-google-login`
+```json
+{
+  "code": "auth_code_from_google",
+  "redirect_uri": "https://yourapp.com/callback"
+}
+```
+
+---
+
+## User Relationships
+
+Users can have relationships like `followers` and `following`. These are typically stored as arrays of IDs in the user `data` object.
+
+| Relationship | ID Pattern |
+|--------------|------------|
+| Following | `following_ids` |
+| Followers | `followers_ids` |
+| Meta | `referral_code` |
+
+---
+
+## Examples
+
+<Tabs>
+<Tab title="JavaScript">
+```javascript
+// Register
+const signup = await fetch('https://api.cocobase.buzz/auth-collections/signup', {
+  method: 'POST',
+  body: JSON.stringify({ email, password, data })
+});
+
+// Update (Follow)
+await fetch('https://api.cocobase.buzz/auth-collections/user', {
+  method: 'PATCH',
+  headers: { 'Authorization': `Bearer ${token}` },
+  body: JSON.stringify({
+    data: { "$append": { "following_ids": targetId } }
+  })
+});
+```
+</Tab>
+<Tab title="Python">
+```python
+import requests
+
+# Login
+res = requests.post('https://api.cocobase.buzz/auth-collections/login', 
+                   json={'email': email, 'password': password})
+token = res.json()['access_token']
+
+# Get User
+user = requests.get('https://api.cocobase.buzz/auth-collections/user',
+                   headers={'Authorization': f'Bearer {token}'}).json()
+```
+</Tab>
+</Tabs>
+
+---
+
+## Best Practices
+
+1. **Security**: Never expose Live API keys (`sk_live_...`) in client-side code.
+2. **Tokens**: Refresh JWT tokens before they expire to maintain session persistence.
+3. **Atomic Operations**: Always use `$append` and `$remove` for array updates to avoid race conditions.
+4. **Validation**: Validate email formats and password strength on the frontend before submitting to the API.
+
+---
+
+## Rate Limits
+
+| Tier | Limit |
+|------|-------|
+| Free | 60 requests / minute |
+| Pro | 1000 requests / minute |
+| Enterprise | Custom |

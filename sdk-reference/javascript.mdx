@@ -36,7 +36,8 @@ import { Cocobase } from "cocobase";
 
 const db = new Cocobase({
   apiKey: "YOUR_API_KEY",
-  baseUrl: "https://api.cocobase.buzz", // Optional, defaults to this
+  projectId: "YOUR_PROJECT_ID",
+  baseURL: "https://api.cocobase.buzz", // Optional, defaults to this
 });
 ```
 
@@ -64,6 +65,42 @@ await db.updateDocument("posts", "doc-id", {
 await db.deleteDocument("posts", "doc-id");
 ```
 
+### Batch Operations
+
+```typescript
+// Create multiple documents
+await db.createDocuments("users", [
+  { name: "Alice", email: "alice@example.com" },
+  { name: "Bob", email: "bob@example.com" },
+]);
+
+// Delete multiple documents
+await db.deleteDocuments("users", ["id-1", "id-2", "id-3"]);
+
+// Update multiple documents
+await db.updateDocuments("users", {
+  "id-1": { status: "active" },
+  "id-2": { status: "inactive" },
+});
+```
+
+### Counting & Aggregation
+
+```typescript
+// Count documents matching a filter
+const { count } = await db.countDocuments("users", {
+  filters: { status: "active" }
+});
+
+// Aggregate (sum, avg, min, max, count)
+const result = await db.aggregateDocuments("orders", {
+  field: "price",
+  operation: "avg",
+  query: { filters: { status: "completed" } }
+});
+console.log(result.result); // average order price
+```
+
 ---
 
 ## Querying Data
@@ -80,20 +117,7 @@ const users = await db.listDocuments("users", {
 });
 ```
 
-### Query Builder
 
-```typescript
-import { QueryBuilder } from "cocobase";
-
-const users = await db.listDocuments("users", {
-  query: new QueryBuilder()
-    .where("status", "active")
-    .whereGreaterThan("age", 18)
-    .whereContains("email", "@gmail.com")
-    .orderByDesc("createdAt")
-    .limit(10),
-});
-```
 
 ---
 
@@ -134,10 +158,8 @@ const users = await db.listDocuments("users", {
 ```typescript
 // Sort by creation date (newest first)
 const posts = await db.listDocuments("posts", {
-  filters: {
-    orderBy: "createdAt",
-    order: "desc",
-  },
+  sort: "createdAt",
+  order: "desc",
 });
 ```
 
@@ -146,10 +168,8 @@ const posts = await db.listDocuments("posts", {
 ```typescript
 // Get page 3 (20 items per page)
 const posts = await db.listDocuments("posts", {
-  filters: {
-    limit: 20,
-    offset: 40,
-  },
+  limit: 20,
+  offset: 40,
 });
 ```
 
@@ -205,6 +225,7 @@ console.log(created.id);
 await db.auth.register({
   email: "user@example.com",
   password: "securePassword123",
+  data: { username: "johndoe" } // optional extra fields
 });
 
 // Get user after registration
@@ -224,74 +245,354 @@ const loggedInUser = await db.auth.getUser();
 await db.auth.logout();
 
 // Check current user
-const currentUser = db.auth.currentUser;
+const currentUser = await db.auth.getCurrentUser();
 ```
 
 ### OAuth
 
 ```typescript
-// Google OAuth
-await db.auth.signInWithGoogle();
-const user = await db.auth.getUser();
+// Google OAuth (requires Google ID token)
+const user = await db.auth.loginWithGoogle({
+  idToken: "google-id-token",
+  platform: "web" // or "android" / "ios"
+});
+```
 
-// GitHub OAuth
-await db.auth.signInWithGitHub();
-const user = await db.auth.getUser();
+---
+
+## Advanced Authentication
+
+### Auth Event Callbacks
+
+```typescript
+// Listen to auth state changes
+db.auth.onAuthEvent({
+  onLogin: (user, token) => {
+    console.log("User logged in:", user.email);
+  },
+  onLogout: () => {
+    console.log("User logged out");
+  },
+  onRegister: (user, token) => {
+    console.log("User registered:", user.email);
+  },
+  onUserUpdate: (user) => {
+    console.log("User updated:", user.email);
+  },
+  onTokenChange: (token) => {
+    console.log("Token changed:", token);
+  },
+  onAuthStateChange: (user, token) => {
+    console.log("Auth state changed:", user?.email);
+  }
+});
+
+// Remove all callbacks
+db.auth.clearAuthCallbacks();
+```
+
+### Google OAuth
+
+```typescript
+const user = await db.auth.loginWithGoogle({
+  idToken: "google-id-token",
+  platform: "web" // or "mobile", "ios", "android"
+});
+console.log("Logged in:", user.email);
+```
+
+### GitHub OAuth
+
+```typescript
+// 1. Redirect user to GitHub OAuth URL
+const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}`;
+window.location.href = githubAuthUrl;
+
+// 2. Handle callback with the code
+const code = new URLSearchParams(window.location.search).get("code");
+const user = await db.auth.loginWithGithub({
+  code: code,
+  redirectUri: "http://localhost:3000/auth/github/callback",
+  platform: "web"
+});
+console.log("Logged in:", user.email);
+```
+
+### Role Checking
+
+```typescript
+if (db.auth.hasRole("admin")) {
+  console.log("User is an admin");
+}
+```
+
+### List Users
+
+```typescript
+const users = await db.auth.listUsers({
+  filters: { status: "active" },
+  limit: 10
+});
+console.log("Total users:", users.total);
+```
+
+### Get User By ID
+
+```typescript
+const user = await db.auth.getUserById("user-123");
+console.log("User:", user.email);
+```
+
+### Password Reset
+
+```typescript
+// Request reset email
+await db.auth.requestPasswordReset("user@example.com");
+console.log("Reset email sent");
+```
+
+### Email Verification
+
+```typescript
+// Request verification email
+await db.auth.requestEmailVerification();
+
+// Verify with token from email
+await db.auth.verifyEmail("verification-token-from-email");
+
+// Resend verification email
+await db.auth.resendVerificationEmail();
+```
+
+### Two-Factor Authentication (2FA)
+
+```typescript
+// Enable 2FA for current user
+await db.auth.enable2FA();
+console.log("2FA enabled");
+
+// Disable 2FA
+await db.auth.disable2FA();
+console.log("2FA disabled");
+
+// Send 2FA code to email
+await db.auth.send2FACode("user@example.com");
+
+// Login flow when 2FA is enabled
+const result = await db.auth.login({
+  email: "user@example.com",
+  password: "password123"
+});
+
+if (result.requires_2fa) {
+  console.log("2FA required:", result.message);
+  
+  // After user enters their code
+  const user = await db.auth.verify2FALogin({
+    email: "user@example.com",
+    code: "123456"
+  });
+  console.log("2FA login successful:", user.email);
+} else {
+  console.log("Logged in:", result.user?.email);
+}
 ```
 
 ---
 
 ## Real-time Data
 
-### Watch Collection
+### Watch a Collection
 
 ```typescript
-// Watch for changes
-const unsubscribe = db.watchCollection("posts", (event) => {
-  console.log("Event type:", event.type); // created, updated, deleted
-  console.log("Document:", event.document);
-});
-
-// Stop watching
-unsubscribe();
+const watcher = db.realtime.collection("posts", { status: "active" });
+// watcher is a CollectionWatcher instance
 ```
 
-### Watch Document
+### Project Broadcast
 
 ```typescript
-const unsubscribe = db.watchDocument("posts", "doc-id", (document) => {
-  console.log("Document updated:", document.data);
+const broadcast = db.realtime.broadcast(userId, userName);
+```
+
+### Room Chat
+
+```typescript
+const room = db.realtime.room("room-id", userId, userName);
+```
+
+### Multiplayer Game
+
+### Initialize Game Client
+```typescript
+const game = db.realtime.game("my-game-function");
+```
+
+### Connect to a Room
+```typescript
+// Basic connection
+await game.connect({ roomId: "game-room-1" });
+
+// With authentication
+await game.connect({
+  roomId: "private-game",
+  token: userJwtToken
 });
 
-// Stop watching
-unsubscribe();
+// With metadata (sent to server on connect)
+await game.connect({
+  roomId: "game-1",
+  metadata: { playerName: "John", team: "red" }
+});
+```
+
+### Listen for Events
+```typescript
+// Listen for connection
+game.on("connected", (data) => {
+  console.log("Connected! My player ID:", data.your_id);
+});
+
+// Listen for players joining/leaving
+game.on("player_joined", (data) => {
+  console.log("Player joined:", data.player_id);
+});
+
+game.on("player_left", (data) => {
+  console.log("Player left:", data.player_id);
+});
+
+// Listen for game state updates
+game.on("state", (data) => {
+  renderPlayers(data.players);
+});
+
+// Listen for tick events
+game.on("tick", (data) => {
+  updateGameLoop(data);
+});
+
+// Listen for errors
+game.on("error", (data) => {
+  console.error("Game error:", data);
+});
+
+// Listen for disconnection
+game.on("disconnected", (data) => {
+  console.log("Disconnected:", data.reason);
+});
+
+// Listen to ALL events (wildcard)
+game.on("*", ({ event, data }) => {
+  console.log("Event:", event, data);
+});
+```
+
+### One-time Event Listener
+```typescript
+// Called once then automatically removed
+game.once("connected", (data) => {
+  console.log("Connected with ID:", data.your_id);
+});
+```
+
+### Remove Event Listeners
+```typescript
+// Remove specific listener
+const unsub = game.on("player_joined", handler);
+unsub(); // unsubscribe
+
+// Remove specific listener by reference
+game.off("player_joined", handler);
+
+// Remove all listeners for an event
+game.removeAllListeners("player_joined");
+
+// Remove ALL listeners
+game.removeAllListeners();
+```
+
+### Send Actions to Server
+```typescript
+// Send a move action
+game.send({ action: "move", x: 100, y: 200 });
+
+// Send a chat message
+game.send({ action: "chat", message: "Hello!" });
+
+// Send any custom action
+game.send({ action: "shoot", angle: 45, power: 80 });
+```
+
+### Check Connection Status
+```typescript
+// Check if connected
+if (game.isConnected) {
+  console.log("Connected");
+}
+
+// Get current player ID
+console.log("My ID:", game.playerId);
+```
+
+### Disconnect
+```typescript
+// Disconnect and disable auto-reconnect
+game.disconnect();
+
+// Disconnect but keep auto-reconnect enabled
+game.disconnect(false);
+```
+
+### Auto-Reconnect
+```typescript
+// Auto-reconnect is enabled by default with exponential backoff
+// Disable it
+game.setAutoReconnect(false);
+
+// Re-enable it
+game.setAutoReconnect(true);
+```
+
+### List Game Rooms
+```typescript
+const { rooms, total } = await db.realtime.listGameRooms();
+rooms.forEach(room => {
+  console.log(`${room.room_id}: ${room.player_count}/${room.max_players} players`);
+});
+
+// List all rooms including private
+const { rooms } = await db.realtime.listGameRooms(false);
+```
+
+### List Rooms
+
+```typescript
+const rooms = await db.realtime.listRooms();
 ```
 
 ---
 
 ## File Storage
 
-### Upload Files
-
 ```typescript
-// Upload a file
-const file = document.getElementById("fileInput").files[0];
-const uploaded = await db.storage.upload(file);
-console.log("File URL:", uploaded.url);
+// Create a document with files
+await db.createDocumentWithFiles(
+  "posts",
+  { title: "Post with Image", content: "Hello!" },
+  {
+    image: file,             // single file
+    gallery: [img1, img2]    // multiple files
+  }
+);
 
-// Upload with document
-const doc = await db.createDocumentWithFiles("posts", {
-  title: "Post with Image",
-  content: "Check out this image!",
-}, {
-  image: file,
-});
-```
-
-### Download Files
-
-```typescript
-const fileUrl = await db.storage.getUrl("file-id");
+// Update a document with files
+await db.updateDocumentWithFiles(
+  "users",
+  "user-123",
+  { bio: "Updated bio" },   // optional data update
+  { avatar: newAvatarFile } // optional file update
+);
 ```
 
 ---
@@ -331,7 +632,7 @@ const books = await db.listDocuments("books");
 ```typescript
 // Good
 const posts = await db.listDocuments("posts", {
-  filters: { limit: 20 },
+  limit: 20,
 });
 
 // Bad - could return thousands

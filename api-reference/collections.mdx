@@ -1,0 +1,124 @@
+---
+title: Collections & Documents
+description: Complete REST API reference for managing collections and documents in Cocobase
+---
+
+# Collections & Documents
+
+Cocobase provides a flexible REST API for managing your data structure (Collections) and the records within them (Documents).
+
+## Collections API
+
+### Create Collection
+Create a new collection for your project.
+- **Endpoint**: `POST /collections`
+- **Body**: `{ "name": "posts" }`
+
+### List Collections
+Retrieve all collections in your project.
+- **Endpoint**: `GET /collections`
+
+### Get Collection
+- **Endpoint**: `GET /collections/{collection}`
+
+### Update Collection
+Rename or update collection settings.
+- **Endpoint**: `PATCH /collections/{collection}`
+
+### Delete Collection
+- **Endpoint**: `DELETE /collections/{collection}`
+
+---
+
+## Documents API
+
+### Create Document
+Create a new record in a specific collection.
+
+- **Endpoint**: `POST /collections/{collection}`
+- **Example**:
+```bash
+curl -X POST https://api.cocobase.buzz/collections/posts \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "My New Post",
+    "content": "Hello World!"
+  }'
+```
+
+### Get Document
+- **Endpoint**: `GET /collections/{collection}/{id}`
+
+### List Documents
+Fetch a list of documents with support for pagination, sorting, and filtering.
+
+- **Endpoint**: `GET /collections/{collection}`
+- **Query Params**:
+  - `limit`: Max items (default: 20, max: 100)
+  - `offset`: Skip items
+  - `orderBy`: Field to sort by
+  - `order`: `asc` or `desc`
+
+#### Filtering
+Filter documents using field operators:
+- `field=value` (Equal)
+- `field__gt=value` (Greater Than)
+- `field__contains=value` (String search)
+- `field__in=v1,v2` (Array match)
+
+### Update Document
+- **Endpoint**: `PATCH /collections/{collection}/{id}` (Partial update)
+- **Endpoint**: `PUT /collections/{collection}/{id}` (Full replacement)
+
+### Delete Document
+- **Endpoint**: `DELETE /collections/{collection}/{id}`
+
+---
+
+## Batch Operations
+
+### Batch Create
+`POST /collections/{collection}/batch`
+```json
+{
+  "documents": [
+    { "title": "Post 1" },
+    { "title": "Post 2" }
+  ]
+}
+```
+
+### Batch Delete
+`POST /collections/{collection}/batch-delete`
+```json
+{
+  "ids": ["doc_123", "doc_456"]
+}
+```
+
+---
+
+## Examples
+
+<Tabs>
+<Tab title="JavaScript">
+```javascript
+// Create
+const res = await fetch('https://api.cocobase.buzz/collections/posts', {
+  method: 'POST',
+  headers: { 'Authorization': 'Bearer YOUR_KEY' },
+  body: JSON.stringify({ title: 'New Post' })
+});
+
+// List with Filter
+const users = await fetch('https://api.cocobase.buzz/collections/users?role=admin');
+```
+</Tab>
+<Tab title="cURL">
+```bash
+curl https://api.cocobase.buzz/collections/posts?limit=10 \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+</Tab>
+</Tabs>

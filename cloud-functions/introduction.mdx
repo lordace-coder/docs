@@ -326,6 +326,67 @@ posts = db.query("posts", **{
 
 ---
 
+## CLI Commands
+
+```bash
+# Initialize project
+cocobase init
+
+# Test function locally
+cocobase test functions/hello.py
+
+# Test with parameters
+cocobase test functions/hello.py --params '{"name": "Alice"}'
+
+# Deploy single function
+cocobase deploy functions/hello.py
+
+# Deploy all functions
+cocobase deploy --all
+
+# View deployed functions
+cocobase list
+
+# View logs
+cocobase logs --function hello --limit 50
+```
+
+## Environment Variables
+
+```bash
+# API Key (required for deployment)
+export COCOBASE_API_KEY=your_api_key
+
+# Project ID
+export COCOBASE_PROJECT_ID=your_project_id
+```
+
+## Calling Your Function
+
+### Via HTTP
+```bash
+curl "https://api.cocobase.buzz/projects/your-project/execute/hello?name=Alice"
+```
+
+### Via JavaScript
+```javascript
+fetch('https://api.cocobase.buzz/projects/your-project/execute/hello?name=Alice')
+  .then(res => res.json())
+  .then(data => console.log(data));
+```
+
+### Via Python
+```python
+import requests
+response = requests.get(
+    "https://api.cocobase.buzz/projects/your-project/execute/hello",
+    params={"name": "Alice"}
+)
+print(response.json())
+```
+
+---
+
 ## Next Steps
 
 - [Environment](/cloud-functions/environment) - Learn about request/response handling

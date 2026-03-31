@@ -1,7 +1,7 @@
 ---
-title: "Quick Start"
-description: "Build your first multiplayer function in 5 minutes"
-icon: "rocket"
+title: 'Quick Start'
+description: 'Build your first multiplayer function in 5 minutes'
+icon: 'rocket'
 ---
 
 ## Create Your First Multiplayer Function
@@ -24,20 +24,20 @@ curl -X POST http://localhost:8000/projects/YOUR_PROJECT_ID/functions \
 ```
 
 ```javascript JavaScript SDK
-import { CocoCloud } from "@cococloud/sdk";
+import { CocoCloud } from '@cococloud/sdk';
 
 const coco = new CocoCloud({
-  projectId: "YOUR_PROJECT_ID",
-  apiKey: "YOUR_API_KEY",
+  projectId: 'YOUR_PROJECT_ID',
+  apiKey: 'YOUR_API_KEY'
 });
 
 await coco.functions.create({
-  name: "cursor_game",
-  functionType: "websocket",
-  description: "Multiplayer cursor tracking game",
+  name: 'cursor_game',
+  functionType: 'websocket',
+  description: 'Multiplayer cursor tracking game',
   code: `
     // Your WebSocket function code here
-  `,
+  `
 });
 ```
 
@@ -142,122 +142,112 @@ async def on_disconnect():
 ```html HTML + JavaScript
 <!DOCTYPE html>
 <html>
-  <head>
+<head>
     <title>Cursor Game</title>
     <style>
-      body {
-        margin: 0;
-        overflow: hidden;
-        background: #1a1a2e;
-      }
-      canvas {
-        display: block;
-      }
+        body { margin: 0; overflow: hidden; background: #1a1a2e; }
+        canvas { display: block; }
     </style>
-  </head>
-  <body>
+</head>
+<body>
     <canvas id="canvas"></canvas>
 
     <script>
-      const canvas = document.getElementById("canvas");
-      const ctx = canvas.getContext("2d");
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-      // Connect to WebSocket
-      const ws = new WebSocket(
-        "wss://cloud.cocobase.buzz/ws/YOUR_PROJECT_ID/cursor_game"
-      );
-
-      let myId = null;
-      let players = {};
-
-      // Send initial connection message
-      ws.onopen = () => {
-        ws.send(
-          JSON.stringify({
-            room_id: "lobby",
-            player_name: "Player" + Math.floor(Math.random() * 1000),
-          })
+        // Connect to WebSocket
+        const ws = new WebSocket(
+            'ws://localhost:8000/ws/YOUR_PROJECT_ID/cursor_game'
         );
-      };
 
-      // Handle incoming messages
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
+        let myId = null;
+        let players = {};
 
-        switch (data.type) {
-          case "welcome":
-            myId = data.your_id;
-            players = data.players;
-            break;
+        // Send initial connection message
+        ws.onopen = () => {
+            ws.send(JSON.stringify({
+                room_id: 'lobby',
+                player_name: 'Player' + Math.floor(Math.random() * 1000)
+            }));
+        };
 
-          case "player_joined":
-            console.log(data.player_name + " joined!");
-            break;
+        // Handle incoming messages
+        ws.onmessage = (event) => {
+            const data = JSON.parse(event.data);
 
-          case "player_moved":
-            if (players[data.player_id]) {
-              players[data.player_id].x = data.x;
-              players[data.player_id].y = data.y;
+            switch (data.type) {
+                case 'welcome':
+                    myId = data.your_id;
+                    players = data.players;
+                    break;
+
+                case 'player_joined':
+                    console.log(data.player_name + ' joined!');
+                    break;
+
+                case 'player_moved':
+                    if (players[data.player_id]) {
+                        players[data.player_id].x = data.x;
+                        players[data.player_id].y = data.y;
+                    }
+                    break;
+
+                case 'player_left':
+                    delete players[data.player_id];
+                    console.log(data.player_name + ' left');
+                    break;
             }
-            break;
+        };
 
-          case "player_left":
-            delete players[data.player_id];
-            console.log(data.player_name + " left");
-            break;
-        }
-      };
+        // Send cursor position on mouse move
+        canvas.addEventListener('mousemove', (e) => {
+            if (ws.readyState === WebSocket.OPEN && myId) {
+                ws.send(JSON.stringify({
+                    action: 'move',
+                    x: e.clientX,
+                    y: e.clientY
+                }));
 
-      // Send cursor position on mouse move
-      canvas.addEventListener("mousemove", (e) => {
-        if (ws.readyState === WebSocket.OPEN && myId) {
-          ws.send(
-            JSON.stringify({
-              action: "move",
-              x: e.clientX,
-              y: e.clientY,
-            })
-          );
+                // Update local state immediately
+                if (players[myId]) {
+                    players[myId].x = e.clientX;
+                    players[myId].y = e.clientY;
+                }
+            }
+        });
 
-          // Update local state immediately
-          if (players[myId]) {
-            players[myId].x = e.clientX;
-            players[myId].y = e.clientY;
-          }
-        }
-      });
+        // Render loop
+        function render() {
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Render loop
-      function render() {
-        ctx.fillStyle = "#1a1a2e";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Draw all players
+            for (const [id, player] of Object.entries(players)) {
+                ctx.fillStyle = player.color || '#fff';
+                ctx.beginPath();
+                ctx.arc(player.x, player.y, 10, 0, Math.PI * 2);
+                ctx.fill();
 
-        // Draw all players
-        for (const [id, player] of Object.entries(players)) {
-          ctx.fillStyle = player.color || "#fff";
-          ctx.beginPath();
-          ctx.arc(player.x, player.y, 10, 0, Math.PI * 2);
-          ctx.fill();
+                // Draw name
+                ctx.fillStyle = '#fff';
+                ctx.font = '14px Arial';
+                ctx.fillText(player.name, player.x + 15, player.y + 5);
+            }
 
-          // Draw name
-          ctx.fillStyle = "#fff";
-          ctx.font = "14px Arial";
-          ctx.fillText(player.name, player.x + 15, player.y + 5);
+            requestAnimationFrame(render);
         }
 
-        requestAnimationFrame(render);
-      }
-
-      render();
+        render();
     </script>
-  </body>
+</body>
 </html>
 ```
 
 ```javascript React + WebSocket
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 
 function CursorGame() {
   const canvasRef = useRef(null);
@@ -268,41 +258,39 @@ function CursorGame() {
   useEffect(() => {
     // Connect to WebSocket
     const ws = new WebSocket(
-      "wss://cloud.cocobase.buzz/ws/YOUR_PROJECT_ID/cursor_game"
+      'ws://localhost:8000/ws/YOUR_PROJECT_ID/cursor_game'
     );
     wsRef.current = ws;
 
     ws.onopen = () => {
-      ws.send(
-        JSON.stringify({
-          room_id: "lobby",
-          player_name: "Player" + Math.floor(Math.random() * 1000),
-        })
-      );
+      ws.send(JSON.stringify({
+        room_id: 'lobby',
+        player_name: 'Player' + Math.floor(Math.random() * 1000)
+      }));
     };
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
       switch (data.type) {
-        case "welcome":
+        case 'welcome':
           setMyId(data.your_id);
           setPlayers(data.players);
           break;
 
-        case "player_moved":
-          setPlayers((prev) => ({
+        case 'player_moved':
+          setPlayers(prev => ({
             ...prev,
             [data.player_id]: {
               ...prev[data.player_id],
               x: data.x,
-              y: data.y,
-            },
+              y: data.y
+            }
           }));
           break;
 
-        case "player_left":
-          setPlayers((prev) => {
+        case 'player_left':
+          setPlayers(prev => {
             const newPlayers = { ...prev };
             delete newPlayers[data.player_id];
             return newPlayers;
@@ -316,39 +304,37 @@ function CursorGame() {
 
   const handleMouseMove = (e) => {
     if (wsRef.current?.readyState === WebSocket.OPEN && myId) {
-      wsRef.current.send(
-        JSON.stringify({
-          action: "move",
-          x: e.clientX,
-          y: e.clientY,
-        })
-      );
+      wsRef.current.send(JSON.stringify({
+        action: 'move',
+        x: e.clientX,
+        y: e.clientY
+      }));
 
-      setPlayers((prev) => ({
+      setPlayers(prev => ({
         ...prev,
-        [myId]: { ...prev[myId], x: e.clientX, y: e.clientY },
+        [myId]: { ...prev[myId], x: e.clientX, y: e.clientY }
       }));
     }
   };
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
     function render() {
-      ctx.fillStyle = "#1a1a2e";
+      ctx.fillStyle = '#1a1a2e';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       Object.entries(players).forEach(([id, player]) => {
-        ctx.fillStyle = player.color || "#fff";
+        ctx.fillStyle = player.color || '#fff';
         ctx.beginPath();
         ctx.arc(player.x, player.y, 10, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.fillStyle = "#fff";
-        ctx.font = "14px Arial";
+        ctx.fillStyle = '#fff';
+        ctx.font = '14px Arial';
         ctx.fillText(player.name, player.x + 15, player.y + 5);
       });
 
@@ -362,7 +348,7 @@ function CursorGame() {
     <canvas
       ref={canvasRef}
       onMouseMove={handleMouseMove}
-      style={{ display: "block", background: "#1a1a2e" }}
+      style={{ display: 'block', background: '#1a1a2e' }}
     />
   );
 }
@@ -371,43 +357,43 @@ export default CursorGame;
 ```
 
 ```javascript CocoCloud SDK
-import { CocoCloud } from "@cococloud/sdk";
+import { CocoCloud } from '@cococloud/sdk';
 
 const coco = new CocoCloud({
-  projectId: "YOUR_PROJECT_ID",
-  apiKey: "YOUR_API_KEY",
+  projectId: 'YOUR_PROJECT_ID',
+  apiKey: 'YOUR_API_KEY'
 });
 
 // Connect to multiplayer function
-const connection = coco.multiplayer.connect("cursor_game", {
-  roomId: "lobby",
-  playerName: "Player" + Math.floor(Math.random() * 1000),
+const connection = coco.multiplayer.connect('cursor_game', {
+  roomId: 'lobby',
+  playerName: 'Player' + Math.floor(Math.random() * 1000)
 });
 
 // Handle connection
-connection.on("connected", (data) => {
-  console.log("Connected! Your ID:", data.yourId);
-  console.log("Current players:", data.players);
+connection.on('connected', (data) => {
+  console.log('Connected! Your ID:', data.yourId);
+  console.log('Current players:', data.players);
 });
 
 // Handle player movements
-connection.on("player_moved", (data) => {
+connection.on('player_moved', (data) => {
   console.log(`Player ${data.player_id} moved to (${data.x}, ${data.y})`);
   // Update your game state
 });
 
 // Send cursor position
-window.addEventListener("mousemove", (e) => {
+window.addEventListener('mousemove', (e) => {
   connection.send({
-    action: "move",
+    action: 'move',
     x: e.clientX,
-    y: e.clientY,
+    y: e.clientY
   });
 });
 
 // Handle disconnection
-connection.on("disconnected", () => {
-  console.log("Disconnected from game");
+connection.on('disconnected', () => {
+  console.log('Disconnected from game');
 });
 ```
 

@@ -13,7 +13,7 @@ Add Cocobase to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  cocobase_flutter: ^latest_version
+  coco_base_flutter: ^1.0.0
 ```
 
 Install dependencies:
@@ -27,14 +27,16 @@ flutter pub get
 ### Initialize Cocobase
 
 ```dart
-import 'package:cocobase_flutter/cocobase_flutter.dart';
+import 'package:coco_base_flutter/coco_base_flutter.dart';
 
 void main() {
-  final config = CocobaseConfig(
-    apiKey: "YOUR_API_KEY",
-    baseUrl: "https://api.cocobase.buzz",  // Optional, defaults to this
+  final db = Cocobase(
+    CocobaseConfig(
+      apiKey: "YOUR_API_KEY",
+      baseUrl: "https://api.cocobase.buzz", // Optional
+      authStore: myAuthStore, // Optional - custom token storage
+    ),
   );
-  final db = Cocobase(config);
 
   runApp(MyApp());
 }
@@ -523,17 +525,107 @@ print('Title: ${created.data.title}');
 ### Batch Operations
 
 ```dart
-// Create multiple typed documents
-final newBooks = [
-  Book(title: 'Book 1', author: 'Author 1', price: 19.99),
-  Book(title: 'Book 2', author: 'Author 2', price: 24.99),
-];
-
-final results = await db.batchCreateDocuments<Book>("books", newBooks);
-
-for (var result in results.documents) {
-  print('Created: ${result.data.title} (${result.id})');
+// Batch create - takes List<Map<String, dynamic>>
+final result = await db.batchCreateDocuments(
+  "books",
+  [
+    {"title": "Book 1", "author": "Author 1", "price": 19.99},
+    {"title": "Book 2", "author": "Author 2", "price": 24.99},
+  ],
+);
+print('Created: ${result.created} documents');
+for (var doc in result.documents) {
+  print('ID: ${doc.id}');
 }
+
+// Batch update
+final updateResult = await db.batchUpdateDocuments(
+  "books",
+  [
+    {"id": "doc-1", "status": "published"},
+    {"id": "doc-2", "status": "archived"},
+  ],
+);
+print('Updated: ${updateResult.updated}');
+
+// Batch delete
+final deleteResult = await db.batchDeleteDocuments(
+  "books",
+  ["doc-id-1", "doc-id-2", "doc-id-3"],
+);
+print('Deleted: ${deleteResult.deleted}');
+```
+
+## Advanced Queries
+
+### Count Documents
+
+```dart
+final count = await db.countDocuments("users",
+  queryBuilder: QueryBuilder().where("status", "active"),
+);
+print('Total: ${count.count}');
+```
+
+### Aggregate Documents
+
+```dart
+final result = await db.aggregateDocuments("orders",
+  field: "price",
+  operation: "avg", // sum, avg, min, max
+  filters: {"status": "completed"},
+);
+print('Result: ${result.result}');
+```
+
+### Group By Field
+
+```dart
+final grouped = await db.groupByField("users",
+  field: "role",
+  queryBuilder: QueryBuilder().where("status", "active"),
+);
+for (var group in grouped.items) {
+  print('${group.value}: ${group.count} users');
+}
+```
+
+### Get Collection Schema
+
+```dart
+final schema = await db.getCollectionSchema("users");
+for (var field in schema.fields) {
+  print('${field.name}: ${field.type}');
+}
+```
+
+### Upload File
+
+```dart
+final url = await db.uploadFileFromPath(
+  filepath: "/path/to/file.jpg",
+  fileName: "avatar.jpg",
+);
+print('File URL: $url');
+```
+
+## Collection Management
+
+```dart
+// Create collection
+final col = await db.createCollection("my-collection");
+
+// List all collections
+final cols = await db.listCollections();
+
+// Get a collection
+final col = await db.getCollection("my-collection");
+
+// Update collection name
+await db.updateCollection("my-collection", "new-name");
+
+// Delete collection (WARNING: deletes all documents!)
+await db.deleteCollection("my-collection");
 ```
 
 ---
@@ -599,88 +691,64 @@ final orders = await db.listDocuments<Order>("orders", filters: {
 
 ## Authentication
 
-### Email/Password
-
+### Initialize Auth
 ```dart
-// Register (returns null)
-await db.auth.register(
-  email: "user@example.com",
-  password: "securePassword123",
-);
+// Restore session from custom auth store on app start
+await db.initAuth();
+```
 
-// Get the authenticated user after registration
-final user = await db.auth.getUser();
+### Login
+```dart
+await db.login("user@example.com", "securePassword123");
+
+// Get user after login
+final user = await db.getCurrentUser();
 print('User ID: ${user.id}');
 print('Email: ${user.email}');
+```
 
-// Login (returns null)
-await db.auth.login(
-  email: "user@example.com",
-  password: "securePassword123",
+### Register
+```dart
+await db.register(
+  "user@example.com",
+  "securePassword123",
+  data: {"username": "johndoe"}, // optional
 );
 
-// Get the authenticated user after login
-final user = await db.auth.getUser();
-
-// Logout
-await db.auth.logout();
-
-// Check current user (synchronous)
-final currentUser = db.auth.currentUser;
+// Get user after registration
+final user = await db.getCurrentUser();
 ```
 
-**Important:** The `register()` and `login()` methods return `null`. After successful authentication, use `getUser()` to retrieve the authenticated user details.
-
-### Complete Authentication Example
-
+### Logout (synchronous)
 ```dart
-// Registration flow
-try {
-  await db.auth.register(
-    email: "user@example.com",
-    password: "securePassword123",
-  );
+db.logout();
+```
 
-  // Get user details after registration
-  final user = await db.auth.getUser();
-  if (user != null) {
-    print('Registered successfully! User ID: ${user.id}');
-  }
-} catch (e) {
-  print('Registration failed: $e');
-}
-
-// Login flow
-try {
-  await db.auth.login(
-    email: "user@example.com",
-    password: "securePassword123",
-  );
-
-  // Get user details after login
-  final user = await db.auth.getUser();
-  if (user != null) {
-    print('Logged in successfully! Email: ${user.email}');
-  }
-} catch (e) {
-  print('Login failed: $e');
+### Check Authentication
+```dart
+if (db.isAuthenticated()) {
+  print("User is logged in");
 }
 ```
 
-### OAuth
-
+### Get Current User
 ```dart
-// Google OAuth (returns null)
-await db.auth.signInWithGoogle();
+final user = await db.getCurrentUser();
+```
 
-// Get user after OAuth
-final user = await db.auth.getUser();
+### Access Current User Object
+```dart
+// db.user holds the cached user object after login/register
+print(db.user?.email);
+```
 
-// GitHub OAuth (returns null)
-await db.auth.signInWithGitHub();
-
-// Get user after OAuth
-final user = await db.auth.getUser();
+### Update User
+```dart
+final updated = await db.updateUser(
+  data: {"bio": "Updated bio"},
+  email: "newemail@example.com",
+  password: "newpassword123",
+);
 ```
 
 ---
@@ -690,25 +758,20 @@ final user = await db.auth.getUser();
 ### Watch Collection
 
 ```dart
-// Watch for changes
-final subscription = db.watchCollection("posts", (event) {
-  print('Event type: ${event.type}');  // created, updated, deleted
-  print('Document: ${event.document}');
-});
+// Watch a collection for real-time updates
+final conn = db.watchCollection(
+  "posts",
+  (event) {
+    print('Event: ${event['event']}'); // create, update, delete
+    print('Data: ${event['data']}');
+  },
+  connectionName: 'posts-watcher', // optional
+  onConnected: () => print('Connected!'), // optional
+  onConnectionError: () => print('Error!'), // optional
+);
 
-// Cancel subscription
-subscription.cancel();
-```
-
-### Watch Document
-
-```dart
-final subscription = db.watchDocument("posts", "doc-id", (document) {
-  print('Document updated: ${document.data}');
-});
-
-// Cancel subscription
-subscription.cancel();
+// Close the connection when done
+db.closeConnection(conn);
 ```
 
 ---

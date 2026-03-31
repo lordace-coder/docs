@@ -1,0 +1,87 @@
+---
+title: Relationships Guide
+description: Documentation for connecting and populating related documents in Cocobase
+---
+
+# Relationships Guide
+
+Cocobase handles relationships between documents and users using a flexible reference system with automatic "population" (fetch-and-join) support.
+
+## Core Concepts
+
+Cocobase establishes relationships through field references. A field containing a document or user ID is treated as a link.
+
+- **One-to-One**: A single field storing one ID (e.g., `author_id`).
+- **One-to-Many / Many-to-Many**: An array field storing multiple IDs (e.g., `category_ids`, `follower_ids`).
+
+---
+
+## Automatic Detection
+
+Cocobase automatically detects relationships by checking if a field value matches an existing document's ID. When fetching data, you specify which of these fields should be "populated" (replaced with the actual document data).
+
+---
+
+## Population (Joins)
+
+Population is the process of replacing linked IDs with the full document or user object.
+
+### Basic Population
+Replace a single field with its related document.
+- **Endpoint**: `GET /collections/posts?populate=author`
+
+### Multiple Field Population
+Populate multiple related fields in one request.
+- **Endpoint**: `GET /collections/posts?populate=author&populate=categories`
+
+### Nested Population
+Populate a related document, then populate its own related documents.
+- **Endpoint**: `GET /collections/posts?populate=author.company.location`
+
+---
+
+## User Relationships
+
+Cocobase provides first-class support for user-to-user and user-to-document relationships.
+
+| Relationship | Store Field | Example |
+|--------------|-------------|---------|
+| Link to User | `user_id`, `author_id` | `author_id: "user_123"` |
+| Link to Doc | `post_id`, `project_id` | `project_id: "doc_abc"` |
+
+### Social Follow System
+A common pattern for following/unfollowing users is to use arrays of user IDs:
+- **Following**: `following_ids: ["user_A", "user_B"]`
+- **Followers**: `follower_ids: ["user_C", "user_D"]`
+
+*Tip: Use the `$append` and `$remove` operators for atomic updates to these fields.*
+
+---
+
+## Field Naming Conventions
+
+While Cocobase is flexible, we recommend the following naming conventions for clarity:
+
+- End one-to-one reference fields with `_id` (e.g., `creator_id`, `parent_id`).
+- End one-to-many reference fields with `_ids` (e.g., `member_ids`, `tag_ids`).
+
+---
+
+## Filtering by Relationships
+
+You can filter parent documents based on fields in the related child documents.
+
+- **Endpoint**: `GET /collections/posts?author.role=admin&populate=author`
+  *Description: Get all posts where the author's role is 'admin'.*
+
+---
+
+## Complete Example (JavaScript)
+
+```javascript
+// Fetch posts with author and comments populated
+const posts = await fetch('https://api.cocobase.buzz/collections/posts?populate=author&populate=comments');
+
+// Fetch user profile with followers and following populated
+const profile = await fetch('https://api.cocobase.buzz/auth-collections/user?populate=followers_ids&populate=following_ids');
+```

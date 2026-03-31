@@ -53,6 +53,8 @@
             "pages": [
               "cloud-functions/introduction",
               "cloud-functions/environment",
+              "cloud-functions/queue",
+              "cloud-functions/email",
               "cloud-functions/quick-reference",
               "cloud-functions/examples"
             ]
@@ -60,7 +62,10 @@
           {
             "group": "SDK Reference",
             "pages": [
-              "sdk-reference/flutter"
+              "sdk-reference/javascript",
+              "sdk-reference/python",
+              "sdk-reference/flutter",
+              "sdk-reference/golang"
             ]
           },
           {
@@ -71,6 +76,19 @@
               "guides/role-based-access",
               "guides/email-integration",
               "guides/troubleshooting"
+            ]
+          },
+          {
+            "group": "API Reference",
+            "pages": [
+              "api-reference/introduction",
+              "api-reference/authentication",
+              "api-reference/collections",
+              "api-reference/filtering",
+              "api-reference/storage",
+              "api-reference/realtime",
+              "api-reference/relationships",
+              "api-reference/oauth"
             ]
           }
         ]
