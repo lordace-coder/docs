@@ -134,7 +134,7 @@ When using the raw WebSocket API:
 While you can use raw WebSockets, we recommend using the Cocobase SDKs which handle authentication, reconnection, and filtering automatically.
 
 ```javascript
-db.watchCollection('posts', (event) => {
+db.realtime.collection('posts', (event) => {
   console.log('Update received:', event.data);
 });
 ```

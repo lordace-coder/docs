@@ -29,11 +29,10 @@ const posts = await db.listDocuments("posts");
 
 // GOOD - Select only needed fields
 const posts = await db.listDocuments("posts", {
-  query: new QueryBuilder()
-    .select("title")
-    .select("author")
-    .select("createdAt")
-    .limit(20),
+  filters: {
+    select: ["title", "author", "createdAt"],
+    limit: 20,
+  },
 });
 ```
 
@@ -281,10 +280,10 @@ function handleInputChange(field: string, value: string) {
 
 ```typescript
 // BAD - Watch entire collection
-db.watchCollection("messages", handleMessage);
+db.realtime.collection("messages", handleMessage);
 
 // GOOD - Watch specific subset
-db.watchCollection("messages", handleMessage, {
+db.realtime.collection("messages", handleMessage, {
   filters: {
     roomId: currentRoomId,
     createdAt__gte: new Date().toISOString(),
@@ -297,7 +296,7 @@ db.watchCollection("messages", handleMessage, {
 ```typescript
 // React component example
 useEffect(() => {
-  const unsubscribe = db.watchCollection("posts", (event) => {
+  const unsubscribe = db.realtime.collection("posts", (event) => {
     // Handle event
   });
 
@@ -352,7 +351,7 @@ async function compressImage(file: File, maxWidth: number = 1200): Promise<Blob>
 
 // Use before upload
 const compressedImage = await compressImage(originalFile);
-await db.storage.upload(compressedImage);
+await db.createDocumentWithFiles("uploads", { type: "image" }, { file: compressedImage });
 ```
 
 ---

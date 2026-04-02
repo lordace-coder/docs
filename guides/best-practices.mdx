@@ -409,8 +409,10 @@ async function getAllUsers() {
 
   while (hasMore) {
     const result = await db.listDocuments("users", {
-      limit: perPage,
-      offset: (page - 1) * perPage,
+      filters: {
+        limit: perPage,
+        offset: (page - 1) * perPage,
+      }
     });
 
     users.push(...result);

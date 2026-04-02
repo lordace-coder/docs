@@ -111,14 +111,14 @@ Built-in user management that actually works. Registration, login, sessions, and
 <Tabs>
   <Tab title="JavaScript">
     ```typescript
-    await db.auth.register(
-      'email@gmail.com',
-      'password12',
-      {
-        full_name: "Stony Tech",
-        address: "123 Lost avenue"
+    await db.auth.register({
+      email: 'user@example.com',
+      password: 'securePassword123',
+      data: {
+        full_name: "John Doe",
+        address: "123 Main Street"
       }
-    );
+    });
     ```
   </Tab>
 

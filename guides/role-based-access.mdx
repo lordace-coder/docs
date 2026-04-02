@@ -280,7 +280,7 @@ The SDK automatically enforces permissions based on the authenticated user's rol
 ```typescript
 // User with "viewer" role
 const db = new Cocobase({ apiKey: 'your-api-key' });
-await db.auth.login('viewer@example.com', 'password');
+await db.auth.login({ email: 'viewer@example.com', password: 'password' });
 
 // This works - viewers can read
 const posts = await db.listDocuments('posts');
@@ -363,7 +363,7 @@ Documents automatically track the creator:
 
 ```typescript
 // User creates a document
-await db.auth.login('user@example.com', 'password');
+await db.auth.login({ email: 'user@example.com', password: 'password' });
 
 const post = await db.createDocument('posts', {
   title: 'My Post',
@@ -391,7 +391,7 @@ Now users with "Author" role can only access documents they created:
 
 ```typescript
 // Author user logs in
-await db.auth.login('author@example.com', 'password');
+await db.auth.login({ email: 'author@example.com', password: 'password' });
 
 // Can see only their own posts
 const myPosts = await db.listDocuments('posts');

@@ -172,7 +172,7 @@ interface Presence {
 
     // Real-time
     function watchMessages(roomId: string, callback: (message: any) => void) {
-      return db.watchCollection("messages", (event) => {
+      return db.realtime.collection("messages", (event) => {
         if (event.document.data.roomId === roomId) {
           callback(event);
         }
@@ -203,7 +203,7 @@ interface Presence {
     }
 
     function watchPresence(userIds: string[], callback: (presence: any) => void) {
-      return db.watchCollection("presence", callback, {
+      return db.realtime.collection("presence", callback, {
         filters: {
           userId__in: userIds.join(","),
         },
@@ -217,7 +217,7 @@ interface Presence {
       const user = await db.auth.getUser();
 
       // Broadcast typing event
-      await db.broadcast(`room:${roomId}:typing`, {
+      await db.realtime.broadcast(`room:${roomId}:typing`, {
         userId: user.id,
         timestamp: Date.now(),
       });
@@ -225,7 +225,7 @@ interface Presence {
       // Clear after 3 seconds
       clearTimeout(typingTimeout);
       typingTimeout = setTimeout(() => {
-        db.broadcast(`room:${roomId}:typing:stop`, {
+        db.realtime.broadcast(`room:${roomId}:typing:stop`, {
           userId: user.id,
         });
       }, 3000);
@@ -378,7 +378,7 @@ interface Presence {
         loadMessages();
 
         // Watch for new messages
-        const unsubscribe = db.watchCollection("messages", (event) => {
+        const unsubscribe = db.realtime.collection("messages", (event) => {
           if (event.type === "created" && event.document.data.roomId === roomId) {
             setMessages((prev) => [
               ...prev,
