@@ -316,9 +316,14 @@ final query = QueryBuilder()
   .whereGreaterThan('price', 20)
   .limit(10);
 
-// Check what query is generated
-print('Query: ${query.build()}');
 // Output: status=published&price__gt=20&limit=10
+
+// Plain filter alternative:
+const filters = {
+  status: 'published',
+  price__gt: 20,
+  limit: 10
+};
 ```
 
 ---

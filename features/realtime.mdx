@@ -39,7 +39,7 @@ import { Cocobase, CollectionEvent } from "cocobase";
 const db = new Cocobase({ apiKey: "your-api-key" });
 
 // Watch collection
-const connection = db.watchCollection(
+const connection = db.realtime.collection(
   "users",
   (event: CollectionEvent) => {
     switch (event.type) {
@@ -58,15 +58,12 @@ const connection = db.watchCollection(
     }
   },
   {
-    onConnected: () => console.log("✓ Connection established"),
-    onDisconnected: () => console.log("✗ Connection lost"),
-    onError: (err) => console.error("Error:", err),
     filters: { status: "active" }, // optional
   }
 );
 
 // Close connection when done
-connection.close();
+db.closeConnection(connection);
 ```
 </Tab>
 
@@ -184,14 +181,9 @@ wscat -c "wss://api.cocobase.buzz/realtime/collections/users"
 <Tabs>
 <Tab title="JavaScript">
 ```javascript
-const connection = db.watchCollection('users',
+const connection = db.realtime.collection('users',
   (event) => {
     console.log('Event:', event);
-  },
-  {
-    onConnected: () => console.log('✓ Connected'),
-    onDisconnected: () => console.log('✗ Disconnected'),
-    onError: (error) => console.error('Error:', error)
   }
 );
 ```
@@ -296,7 +288,7 @@ Triggered when a new document is created.
 <Tabs>
 <Tab title="JavaScript">
 ```javascript
-db.watchCollection('posts', (event) => {
+db.realtime.collection('posts', (event) => {
   if (event.type === 'create') {
     console.log('New post created:', event.data.id);
     console.log('Title:', event.data.title);
@@ -384,7 +376,7 @@ Triggered when a document is modified.
 <Tabs>
 <Tab title="JavaScript">
 ```javascript
-db.watchCollection('posts', (event) => {
+db.realtime.collection('posts', (event) => {
   if (event.type === 'update') {
     console.log('Post updated:', event.data.id);
     console.log('New title:', event.data.title);
@@ -465,7 +457,7 @@ Triggered when a document is deleted.
 <Tabs>
 <Tab title="JavaScript">
 ```javascript
-db.watchCollection('posts', (event) => {
+db.realtime.collection('posts', (event) => {
   if (event.type === 'delete') {
     console.log('Post deleted:', event.data.id);
 
@@ -539,7 +531,7 @@ ws.onmessage = (event) => {
 <Tabs>
 <Tab title="JavaScript">
 ```javascript
-db.watchCollection('posts', (event) => {
+db.realtime.collection('posts', (event) => {
   switch (event.type) {
     case 'connected':
       console.log('✓ Connected to real-time updates');
@@ -686,7 +678,7 @@ Only receive events for documents matching specific criteria.
 <Tab title="JavaScript">
 ```javascript
 // Watch only active posts
-db.watchCollection('posts',
+db.realtime.collection('posts',
   (event) => {
     console.log('Active post event:', event);
   },
@@ -696,7 +688,7 @@ db.watchCollection('posts',
 );
 
 // Watch posts by specific author
-db.watchCollection('posts',
+db.realtime.collection('posts',
   (event) => {
     console.log('Author post event:', event);
   },
@@ -796,20 +788,11 @@ Send and receive messages across connected clients.
 <Tabs>
 <Tab title="JavaScript">
 ```javascript
-// Join a room
-const room = db.joinRoom("chat-room-1", (message) => {
-  console.log(`${message.from}: ${message.content}`);
-});
+// Project broadcast
+const broadcast = db.realtime.broadcast(userId, userName);
 
-// Send a message
-room.broadcast({
-  type: "chat",
-  content: "Hello everyone!",
-  timestamp: new Date().toISOString(),
-});
-
-// Leave room
-room.leave();
+// Room chat  
+const room = db.realtime.room("room-id", userId, userName);
 ```
 </Tab>
 
@@ -934,23 +917,9 @@ class ResilientWatcher {
 
   watch(handler) {
     try {
-      this.connection = this.db.watchCollection(
+      this.connection = this.db.realtime.collection(
         this.collection,
-        handler,
-        {
-          onConnected: () => {
-            console.log('✓ Connected');
-            this.retryCount = 0; // Reset on success
-          },
-          onDisconnected: () => {
-            console.log('✗ Disconnected, reconnecting...');
-            this.reconnect(handler);
-          },
-          onError: (error) => {
-            console.error('Error:', error);
-            this.reconnect(handler);
-          }
-        }
+        handler
       );
     } catch (error) {
       console.error('Failed to connect:', error);
@@ -976,7 +945,7 @@ class ResilientWatcher {
 
   close() {
     if (this.connection) {
-      this.connection.close();
+      this.db.closeConnection(this.connection);
     }
   }
 }
@@ -1256,7 +1225,7 @@ class ChatRoom {
 
   async connect() {
     // Watch for new messages
-    this.connection = this.db.watchCollection(
+    this.connection = this.db.realtime.collection(
       'messages',
       (event) => {
         if (event.type === 'create') {
@@ -1288,7 +1257,7 @@ class ChatRoom {
 
   disconnect() {
     if (this.connection) {
-      this.connection.close();
+      this.db.closeConnection(this.connection);
     }
   }
 }
@@ -1600,10 +1569,10 @@ Properly close WebSocket connections when done to free up resources.
 ```javascript
 // ✓ Good: Close when component unmounts
 useEffect(() => {
-  const connection = db.watchCollection('posts', handler);
+  const connection = db.realtime.collection('posts', handler);
 
   return () => {
-    connection.close();
+    db.closeConnection(connection);
   };
 }, []);
 ```
@@ -1614,12 +1583,12 @@ Use filters to reduce bandwidth and only receive relevant events.
 
 ```javascript
 // ✓ Good: Filter on server
-db.watchCollection('posts', handler, {
+db.realtime.collection('posts', handler, {
   filters: { author_id: userId }
 });
 
 // ✗ Bad: Filter on client
-db.watchCollection('posts', (event) => {
+db.realtime.collection('posts', (event) => {
   if (event.data.author_id === userId) {
     handler(event);
   }
@@ -1637,7 +1606,7 @@ Don't update UI on every event - batch updates for better performance.
 ```javascript
 // ✓ Good: Debounce updates
 let updateTimeout;
-db.watchCollection('posts', (event) => {
+db.realtime.collection('posts', (event) => {
   clearTimeout(updateTimeout);
   updateTimeout = setTimeout(() => {
     updateUI();
@@ -1651,12 +1620,7 @@ Always implement error handlers for WebSocket connections.
 
 ```javascript
 // ✓ Good: Error handling
-db.watchCollection('posts', handler, {
-  onError: (error) => {
-    console.error('Connection error:', error);
-    showErrorNotification();
-  }
-});
+db.realtime.collection('posts', handler);
 ```
 </Accordion>
 </AccordionGroup>

@@ -70,7 +70,7 @@ interface Follow {
 <Tabs>
   <Tab title="JavaScript">
     ```typescript
-    import { Cocobase, QueryBuilder } from "cocobase";
+    import { Cocobase } from "cocobase";
 
     const db = new Cocobase({
       apiKey: process.env.COCOBASE_API_KEY,
@@ -117,10 +117,12 @@ interface Follow {
 
       // Get posts from followed users
       return await db.listDocuments("posts", {
-        query: new QueryBuilder()
-          .whereIn("authorId", followingIds)
-          .orderByDesc("createdAt")
-          .limit(20),
+        filters: {
+          authorId__in: followingIds.join(","),
+          orderBy: "createdAt",
+          order: "desc",
+          limit: 20
+        },
       });
     }
 
@@ -280,7 +282,7 @@ interface Follow {
 
     // Real-time feed updates
     function watchFeed(callback: (event: any) => void) {
-      return db.watchCollection("posts", callback);
+      return db.realtime.collection("posts", callback);
     }
     ```
   </Tab>

@@ -100,7 +100,7 @@ interface Todo {
     // Real-time sync
     function watchTodos(callback: (todos: any[]) => void) {
       const user = db.auth.currentUser;
-      return db.watchCollection("todos", (event) => {
+      return db.realtime.collection("todos", (event) => {
         // Refresh todos list on any change
         getTodos().then(callback);
       }, {
@@ -206,7 +206,7 @@ interface Todo {
         loadTodos();
 
         // Real-time updates
-        const unsubscribe = db.watchCollection("todos", () => {
+        const unsubscribe = db.realtime.collection("todos", () => {
           loadTodos();
         });
 
