@@ -65,6 +65,46 @@ await db.updateDocument("posts", "doc-id", {
 await db.deleteDocument("posts", "doc-id");
 ```
 
+## update_document vs update_document_fields
+
+These two methods behave very differently. Understanding 
+the difference is critical to avoid accidentally losing data.
+
+### updateDocument - Replaces entire document
+WARNING: This replaces ALL fields. Any field not 
+included will be permanently deleted.
+
+// Original document:
+// { name: "John", age: 25, city: "Lagos", role: "admin" }
+
+await db.updateDocument("users", "user-123", {
+  name: "John Doe"
+});
+
+// Result: { name: "John Doe" }
+// age, city and role are GONE!
+
+### updateDocumentFields - Updates only specified fields
+This is the safe option. Only updates fields you provide.
+All other fields remain untouched.
+
+// Original document:
+// { name: "John", age: 25, city: "Lagos", role: "admin" }
+
+await db.updateDocumentFields("users", "user-123", {
+  name: "John Doe"
+});
+
+// Result: { name: "John Doe", age: 25, city: "Lagos", role: "admin" }
+// Only name was updated, everything else preserved!
+
+Use updateDocument when you want to completely 
+replace a document with new data.
+
+Use updateDocumentFields when you want to partially 
+update specific fields only. This is the safer and 
+more common choice.
+
 ### Batch Operations
 
 ```typescript
@@ -264,32 +304,49 @@ const user = await db.auth.loginWithGoogle({
 
 ### Auth Event Callbacks
 
-```typescript
-// Listen to auth state changes
+Use onAuthEvent to react to authentication state changes 
+across your app. Register callbacks once when your app 
+initializes.
+
+```javascript
 db.auth.onAuthEvent({
   onLogin: (user, token) => {
     console.log("User logged in:", user.email);
-  },
-  onLogout: () => {
-    console.log("User logged out");
+    // Update your app state
   },
   onRegister: (user, token) => {
     console.log("User registered:", user.email);
+    // Redirect to onboarding
+  },
+  onLogout: () => {
+    console.log("User logged out");
+    // Redirect to login page
   },
   onUserUpdate: (user) => {
-    console.log("User updated:", user.email);
+    console.log("User profile updated:", user.email);
+    // Refresh user data in your app
   },
   onTokenChange: (token) => {
-    console.log("Token changed:", token);
+    console.log("Token refreshed");
+    // Update stored token
   },
   onAuthStateChange: (user, token) => {
-    console.log("Auth state changed:", user?.email);
+    // Called on initAuth() - use to restore session
+    if (user) {
+      console.log("Session restored:", user.email);
+    } else {
+      console.log("No active session");
+    }
   }
 });
 
-// Remove all callbacks
+// Remove all callbacks when done (e.g. component unmount)
 db.auth.clearAuthCallbacks();
 ```
+
+Note: onAuthEvent is framework-agnostic. Use it to 
+update React state, Vue stores, or Svelte stores 
+without polling. Register once on app initialization.
 
 ### Google OAuth
 

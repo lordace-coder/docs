@@ -1,9 +1,9 @@
 ---
-title: Advanced Features
+title: Advanced Operations
 description: Master batch operations, aggregations, transactions, and performance optimization
 ---
 
-# Advanced Features
+# Advanced Operations
 
 Unlock the full power of CocoBase with batch operations, aggregations, transactions, and advanced data processing techniques.
 
@@ -44,7 +44,7 @@ const newBooks = [
   { title: 'Clean Code', author: 'Robert Martin', price: 49.99 },
 ];
 
-const documents = await db.batchCreateDocuments('books', newBooks);
+const documents = await db.createDocuments('books', newBooks);
 
 console.log(`Created ${documents.length} books`);
 documents.forEach(book => {
@@ -119,7 +119,7 @@ const updates = [
   { id: 'doc-3', price: 34.99 },
 ];
 
-const result = await db.batchUpdateDocuments('books', updates);
+const result = await db.updateDocuments('books', updates);
 
 console.log(`Updated: ${result.updated}`);
 console.log(`Failed: ${result.failed ?? 0}`);
@@ -165,7 +165,7 @@ print('Failed: ${result.failed}');
 ```javascript
 const ids = ['doc-1', 'doc-2', 'doc-3'];
 
-const result = await db.batchDeleteDocuments('books', ids);
+const result = await db.deleteDocuments('books', ids);
 
 console.log(`Deleted: ${result.deleted}`);
 console.log(`Failed: ${result.failed ?? 0}`);
@@ -226,7 +226,7 @@ Future<void> importBooks(List<Map<String, dynamic>> bookData) async {
 ```javascript
 // JavaScript example - handle partial failures
 async function updateMultipleBooks(updates) {
-  const result = await db.batchUpdateDocuments('books', updates);
+  const result = await db.updateDocuments('books', updates);
 
   console.log(`Success: ${result.updated}`);
   if (result.failed > 0) {
@@ -235,6 +235,46 @@ async function updateMultipleBooks(updates) {
   }
 }
 ```
+
+---
+
+## Count Documents
+
+Efficiently retrieve the number of documents in a collection matching a filter.
+
+<Tabs>
+<Tab title="JavaScript">
+```javascript
+// Total count for a collection
+const result = await db.countDocuments("users");
+console.log(result.count);
+
+// With filters
+const active = await db.countDocuments("users", {
+  filters: { status: "active" }
+});
+console.log(`Active users: ${active.count}`);
+```
+</Tab>
+
+<Tab title="Flutter">
+```dart
+final count = await db.countDocuments("users",
+  filters: {"status": "active"},
+);
+print('Total: ${count.count}');
+```
+</Tab>
+
+<Tab title="Python">
+```python
+# Cloud Functions
+def main():
+    result = db.count_documents("users", filters={"status": "active"})
+    return {"count": result["count"]}
+```
+</Tab>
+</Tabs>
 
 ---
 
@@ -256,6 +296,18 @@ final result = await db.aggregateDocuments(
 );
 
 print('Total revenue: \$${result.value}');
+```
+</Tab>
+
+<Tab title="JavaScript">
+```javascript
+const result = await db.aggregateDocuments("sales", {
+  field: "amount",
+  operation: "sum",
+  query: { filters: { status: "completed" } }
+});
+
+console.log(`Total Sales: ${result.result}`);
 ```
 </Tab>
 
@@ -291,6 +343,17 @@ print('Average price: \$${result.value}');
 ```
 </Tab>
 
+<Tab title="JavaScript">
+```javascript
+const result = await db.aggregateDocuments("products", {
+  field: "price",
+  operation: "avg"
+});
+
+console.log(`Average Price: ${result.result}`);
+```
+</Tab>
+
 <Tab title="Python">
 ```python
 def main():
@@ -309,6 +372,26 @@ def main():
 
 Find minimum and maximum values:
 
+<Tabs>
+<Tab title="JavaScript">
+```javascript
+// Minimum price
+const min = await db.aggregateDocuments("books", {
+  field: "price",
+  operation: "min"
+});
+
+// Maximum price
+const max = await db.aggregateDocuments("books", {
+  field: "price",
+  operation: "max"
+});
+
+console.log(`Price range: ${min.result} - ${max.result}`);
+```
+</Tab>
+
+<Tab title="Flutter">
 ```dart
 // Minimum price
 final min = await db.aggregateDocuments(
@@ -326,6 +409,17 @@ final max = await db.aggregateDocuments(
 
 print('Price range: \$${min.value} - \$${max.value}');
 ```
+</Tab>
+
+<Tab title="Python">
+```python
+def main():
+    min_price = db.aggregate_documents("books", field="price", operation="min")
+    max_price = db.aggregate_documents("books", field="price", operation="max")
+    return {"range": [min_price["value"], max_price["value"]]}
+```
+</Tab>
+</Tabs>
 
 ### Aggregations with Filters
 
@@ -411,6 +505,8 @@ def main():
 ## Group By
 
 Group documents by field values and get counts.
+
+Note: `groupByField` is available in Flutter and Python SDKs only. It is not available in the JavaScript SDK.
 
 ### Basic Grouping
 
@@ -716,10 +812,19 @@ Future<Document<Book>> getBook(String id) async {
 
 Only fetch needed fields to reduce bandwidth:
 
-```dart
-// Bad - fetches all fields
-final docs = await db.listDocuments("books");
+<Tabs>
+<Tab title="JavaScript">
+```javascript
+// Select specific fields using query options
+const docs = await db.listDocuments("books", {
+  select: ["id", "title", "price"],
+  limit: 100
+});
+```
+</Tab>
 
+<Tab title="Flutter">
+```dart
 // Good - select specific fields only
 final docs = await db.listDocuments(
   "books",
@@ -730,6 +835,8 @@ final docs = await db.listDocuments(
     .limit(100),
 );
 ```
+</Tab>
+</Tabs>
 
 ### 5. Lazy Loading
 
@@ -1085,6 +1192,21 @@ dio.interceptors.add(LogInterceptor(
   responseBody: true,
 ));
 ```
+
+---
+
+---
+
+## Deprecated Methods
+
+> [!WARNING]
+> The followings methods called directly on the `db` instance are deprecated. Use the `db.auth` namespace instead to ensure compatibility with future SDK versions and to access the latest security features.
+
+- `db.login()` → Use **`db.auth.login()`**
+- `db.register()` → Use **`db.auth.register()`**
+- `db.logout()` → Use **`db.auth.logout()`**
+- `db.isAuthenticated()` → Use **`db.auth.isAuthenticated()`**
+- `db.getCurrentUser()` → Use **`db.auth.getCurrentUser()`**
 
 ---
 

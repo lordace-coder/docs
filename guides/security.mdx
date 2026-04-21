@@ -184,12 +184,12 @@ async function canEditDocument(userId: string, docId: string): Promise<boolean> 
   const doc = await db.getDocument("posts", docId);
 
   // Admins can edit anything
-  if (user.data.role === ROLES.ADMIN) {
+  if (db.auth.hasRole(ROLES.ADMIN)) {
     return true;
   }
 
   // Editors can edit their own documents
-  if (user.data.role === ROLES.EDITOR && doc.data.authorId === userId) {
+  if (db.auth.hasRole(ROLES.EDITOR) && doc.data.authorId === userId) {
     return true;
   }
 

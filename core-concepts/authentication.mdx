@@ -737,32 +737,44 @@ Authenticate users with Google, GitHub, and other OAuth providers:
 <Tabs>
   <Tab title="JavaScript">
     ```typescript
-{/**    // Initiate Google OAuth flow
-    const authUrl = await db.auth.getOAuthUrl("google", {
-      redirectUrl: "https://yourapp.com/auth/callback",
-      scopes: ["email", "profile"]
+    // Cocobase does NOT handle the Google popup.
+    // You handle OAuth yourself, then send the token to Cocobase.
+
+    // Option 1: Using Google Identity Services
+    google.accounts.id.initialize({
+      client_id: 'YOUR_GOOGLE_CLIENT_ID',
+      callback: async (response) => {
+        // Send the ID token to Cocobase
+        const user = await db.auth.loginWithGoogle({
+          idToken: response.credential,
+          platform: "web"
+        });
+        console.log("Logged in:", user.email);
+      }
     });
 
-    // Redirect user to authUrl
-    window.location.href = authUrl;
+    google.accounts.id.renderButton(
+      document.getElementById("google-btn"),
+      { theme: "outline", size: "large" }
+    );
 
-    // In your callback handler
-    const urlParams = new URLSearchParams(window.location.search);
-    const code = urlParams.get('code');
+    // Option 2: Using react-google-login
+    // import { useGoogleLogin } from '@react-oauth/google';
+    // const login = useGoogleLogin({
+    //   onSuccess: async (tokenResponse) => {
+    //     const user = await db.auth.loginWithGoogle({
+    //       idToken: tokenResponse.credential,
+    //       platform: "web"
+    //     });
+    //   }
+    // });
 
-    // Exchange code for token
-    const session = await db.auth.handleOAuthCallback("google", code);
-    console.log("User logged in:", session.user); **/}
-    Web - Using Google Identity Services
-   * google.accounts.id.initialize({
-   *   client_id: 'YOUR_GOOGLE_CLIENT_ID',
-   *   callback: async (response) => {
-   *     const user = await db.auth.loginWithGoogle(response.credential, 'web');
-   *     console.log('Logged in:', user.email);
-   *   }
-   * });
-
-    ``` 
+    // For mobile (iOS/Android)
+    // const user = await db.auth.loginWithGoogle({
+    //   idToken: "token-from-native-google-sdk",
+    //   platform: "ios" // or "android"
+    // });
+    ```
 
   </Tab>
 
@@ -845,13 +857,15 @@ Authenticate users with Google, GitHub, and other OAuth providers:
   <Tab title="JavaScript">
     ```typescript
     // Enable 2FA for current user
-    const { qrCode, secret } = await db.auth.enable2FA();
-
-    console.log("Scan this QR code:", qrCode);
-    console.log("Or enter this secret manually:", secret);
+    await db.auth.enable2FA();
+    console.log("2FA enabled successfully");
 
     // Verify 2FA setup with code from authenticator app
     await db.auth.verify2FA("123456");
+
+    // Disable 2FA
+    await db.auth.disable2FA();
+    console.log("2FA disabled");
     ```
 
   </Tab>
@@ -863,13 +877,15 @@ Authenticate users with Google, GitHub, and other OAuth providers:
   <Tab title="Python">
     ```python
     # Enable 2FA
-    result = db.auth.enable_2fa()
-
-    print(f"QR Code: {result['qr_code']}")
-    print(f"Secret: {result['secret']}")
+    db.auth.enable_2fa()
+    print("2FA enabled")
 
     # Verify 2FA
     db.auth.verify_2fa("123456")
+
+    # Disable 2FA
+    db.auth.disable_2fa()
+    print("2FA disabled")
     ```
 
   </Tab>
@@ -1037,7 +1053,7 @@ await db.auth.initAuth();
 
 if (db.auth.isAuthenticated()) {
   const currentUser = await db.auth.getCurrentUser();
-  if (currentUser.data.role === "admin") {
+  if (db.auth.hasRole("admin")) {
     // Show admin features
   }
 }
@@ -1295,7 +1311,7 @@ Common authentication errors and how to handle them:
   <Tab title="JavaScript">
     ```typescript
     try {
-      await db.auth.login(email, password);
+      await db.auth.login({ email, password });
     } catch (error) {
       switch (error.code) {
         case 'INVALID_CREDENTIALS':

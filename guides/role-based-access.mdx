@@ -200,12 +200,12 @@ const user = await db.auth.getUser();
 console.log('User role:', user.role);
 
 // Check if user has specific role
-if (user.role === 'admin') {
+if (db.auth.hasRole('admin')) {
   // Show admin features
 }
 
 // Check multiple roles
-if (['admin', 'editor'].includes(user.role)) {
+if (db.auth.hasRole('admin') || db.auth.hasRole('editor')) {
   // Show content management features
 }
 ```
@@ -227,8 +227,8 @@ interface User {
 const user = await db.auth.getUser() as User;
 
 // Type-safe role check
-const isAdmin = user.role === 'admin';
-const canEdit = ['admin', 'editor'].includes(user.role);
+const isAdmin = db.auth.hasRole('admin');
+const canEdit = db.auth.hasRole('admin') || db.auth.hasRole('editor');
 ```
 </Tab>
 
@@ -329,7 +329,7 @@ function Dashboard() {
       </div>
 
       {/* Show only for editors and admins */}
-      {['admin', 'editor'].includes(user.role) && (
+      {(db.auth.hasRole('admin') || db.auth.hasRole('editor')) && (
         <div>
           <h2>Content Management</h2>
           <button>Create New Post</button>
@@ -338,7 +338,7 @@ function Dashboard() {
       )}
 
       {/* Show only for admins */}
-      {user.role === 'admin' && (
+      {db.auth.hasRole('admin') && (
         <div>
           <h2>Admin Panel</h2>
           <button>Manage Users</button>

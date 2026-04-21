@@ -347,7 +347,7 @@ const nearbyPlaces = await db.collection("places").list({
     "location.lng": { $gte: -75.0, $lte: -73.0 },
   },
 });
-``
+```
 
 ## Type Validation
 
@@ -355,6 +355,7 @@ While Cocobase is schema-less, you can implement validation in your application:
 
 <Tabs>
   <Tab title="TypeScript/JavaScript">
+
     ### Using Zod
 
     ```typescript
@@ -377,6 +378,7 @@ While Cocobase is schema-less, you can implement validation in your application:
 
     const validatedData = UserSchema.parse(userData);
     await db.collection("users").create(validatedData);
+
     ```
 
   </Tab>
