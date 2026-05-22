@@ -41,7 +41,8 @@ From your [CocoBase dashboard](https://app.cocobase.cc):
 
 - **API Key** — project settings → API Key
 - **Project ID** — project settings → Project ID
-- **Email + Password** — your CocoBase account credentials (needed for cloud function and cron job management)
+
+That's all you need. The MCP server is project-scoped and authenticates entirely via your API key — no account email or password required.
 
 ### Step 3 — Configure your AI tool
 
@@ -57,16 +58,14 @@ From your [CocoBase dashboard](https://app.cocobase.cc):
           "args": ["-y", "cocobase-mcp"],
           "env": {
             "COCOBASE_API_KEY": "your-api-key",
-            "COCOBASE_PROJECT_ID": "your-project-id",
-            "COCOBASE_EMAIL": "you@example.com",
-            "COCOBASE_PASSWORD": "your-password"
+            "COCOBASE_PROJECT_ID": "your-project-id"
           }
         }
       }
     }
     ```
 
-    Or to your global `~/.claude/mcp.json` to use it in all projects.
+    Or add to your global `~/.claude/mcp.json` to use it in all projects.
   </Tab>
   <Tab title="Claude Desktop">
     Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
@@ -79,9 +78,7 @@ From your [CocoBase dashboard](https://app.cocobase.cc):
           "args": ["-y", "cocobase-mcp"],
           "env": {
             "COCOBASE_API_KEY": "your-api-key",
-            "COCOBASE_PROJECT_ID": "your-project-id",
-            "COCOBASE_EMAIL": "you@example.com",
-            "COCOBASE_PASSWORD": "your-password"
+            "COCOBASE_PROJECT_ID": "your-project-id"
           }
         }
       }
@@ -100,9 +97,7 @@ From your [CocoBase dashboard](https://app.cocobase.cc):
         "args": ["-y", "cocobase-mcp"],
         "env": {
           "COCOBASE_API_KEY": "your-api-key",
-          "COCOBASE_PROJECT_ID": "your-project-id",
-          "COCOBASE_EMAIL": "you@example.com",
-          "COCOBASE_PASSWORD": "your-password"
+          "COCOBASE_PROJECT_ID": "your-project-id"
         }
       }
     }
@@ -114,14 +109,8 @@ From your [CocoBase dashboard](https://app.cocobase.cc):
 
 | Variable | Required | Purpose |
 |----------|----------|---------|
-| `COCOBASE_API_KEY` | Always | Authenticates all project data operations |
-| `COCOBASE_PROJECT_ID` | Always | Scopes operations to your project |
-| `COCOBASE_EMAIL` | For cloud functions & cron | Dashboard login for cloud function / cron management |
-| `COCOBASE_PASSWORD` | For cloud functions & cron | Dashboard login for cloud function / cron management |
-
-<Note>
-  `COCOBASE_EMAIL` and `COCOBASE_PASSWORD` are only needed for cloud function creation/editing and cron job management. Collection, document, user, email, storage, and analytics tools work with just the API key.
-</Note>
+| `COCOBASE_API_KEY` | Yes | Authenticates all operations (project-scoped) |
+| `COCOBASE_PROJECT_ID` | Yes | Scopes cloud function and cron tools to your project |
 
 ---
 
