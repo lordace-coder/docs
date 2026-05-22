@@ -31,7 +31,7 @@ GET /storage/files/{id}
     "name": "image.jpg",
     "size": 1024000,
     "mimeType": "image/jpeg",
-    "url": "https://storage.cocobase.buzz/files/abc123.jpg",
+    "url": "https://storage.cocobase.cc/files/abc123.jpg",
     "createdAt": "2024-01-15T10:30:00Z"
   }
 }
@@ -40,7 +40,7 @@ GET /storage/files/{id}
 ### Example
 
 ```bash
-curl https://api.cocobase.buzz/storage/files/file_abc123 \
+curl https://api.cocobase.cc/storage/files/file_abc123 \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
@@ -67,7 +67,7 @@ Content-Disposition: attachment; filename="image.jpg"
 ### Example
 
 ```bash
-curl https://api.cocobase.buzz/storage/files/file_abc123/download \
+curl https://api.cocobase.cc/storage/files/file_abc123/download \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -o downloaded-image.jpg
 ```
@@ -96,7 +96,7 @@ GET /storage/files/{id}/signed-url
 {
   "success": true,
   "data": {
-    "url": "https://storage.cocobase.buzz/files/abc123.jpg?signature=...",
+    "url": "https://storage.cocobase.cc/files/abc123.jpg?signature=...",
     "expiresAt": "2024-01-15T11:30:00Z"
   }
 }
@@ -105,7 +105,7 @@ GET /storage/files/{id}/signed-url
 ### Example
 
 ```bash
-curl "https://api.cocobase.buzz/storage/files/file_abc123/signed-url?expires=7200" \
+curl "https://api.cocobase.cc/storage/files/file_abc123/signed-url?expires=7200" \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
@@ -118,7 +118,7 @@ curl "https://api.cocobase.buzz/storage/files/file_abc123/signed-url?expires=720
 ```javascript
 // Get file info
 const response = await fetch(
-  "https://api.cocobase.buzz/storage/files/file_abc123",
+  "https://api.cocobase.cc/storage/files/file_abc123",
   {
     headers: {
       Authorization: "Bearer YOUR_API_KEY",
@@ -130,7 +130,7 @@ console.log(file.url);
 
 // Get signed URL
 const signedResponse = await fetch(
-  "https://api.cocobase.buzz/storage/files/file_abc123/signed-url?expires=3600",
+  "https://api.cocobase.cc/storage/files/file_abc123/signed-url?expires=3600",
   {
     headers: {
       Authorization: "Bearer YOUR_API_KEY",
@@ -148,7 +148,7 @@ import requests
 
 # Get file info
 response = requests.get(
-    "https://api.cocobase.buzz/storage/files/file_abc123",
+    "https://api.cocobase.cc/storage/files/file_abc123",
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
 file = response.json()["data"]
@@ -156,7 +156,7 @@ print(file["url"])
 
 # Download file
 download_response = requests.get(
-    "https://api.cocobase.buzz/storage/files/file_abc123/download",
+    "https://api.cocobase.cc/storage/files/file_abc123/download",
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
 with open("downloaded-image.jpg", "wb") as f:

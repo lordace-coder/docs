@@ -1,80 +1,196 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Go from zero to a working CocoBase project in under 5 minutes
 ---
 
 ## Get started in three steps
 
-Get your documentation site running locally and make your first customization.
+### Step 1 — Create a project
 
-### Step 1: Set up your local environment
+1. Sign up at [app.cocobase.cc](https://app.cocobase.cc)
+2. Click **New Project** and give it a name
+3. Copy your **API Key** from the project settings
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+### Step 2 — Install the SDK
 
-### Step 2: Deploy your changes
+<Tabs>
+  <Tab title="JavaScript / TypeScript">
+    ```bash
+    npm install cocobase
+    ```
+  </Tab>
+  <Tab title="Flutter / Dart">
+    Add to `pubspec.yaml`:
+    ```yaml
+    dependencies:
+      coco_base_flutter: ^1.2.0
+    ```
+    Then run `flutter pub get`.
+  </Tab>
+  <Tab title="HTML (CDN)">
+    ```html
+    <script src="https://cdn.jsdelivr.net/npm/cocobase/dist/browser/cocobase.min.js"></script>
+    ```
+  </Tab>
+</Tabs>
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+### Step 3 — Make your first call
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+<Tabs>
+  <Tab title="JavaScript / TypeScript">
+    ```typescript
+    import { Cocobase } from "cocobase";
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    const db = new Cocobase({ apiKey: "YOUR_API_KEY" });
 
-### Step 3: Go live
+    // Create a document
+    const post = await db.createDocument("posts", {
+      title: "My First Post",
+      content: "Hello, CocoBase!",
+    });
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    console.log("Created:", post.id);
+
+    // List documents
+    const posts = await db.listDocuments("posts");
+    console.log("All posts:", posts.length);
+    ```
+  </Tab>
+  <Tab title="Flutter / Dart">
+    ```dart
+    import 'package:coco_base_flutter/coco_base_flutter.dart';
+
+    void main() async {
+      final db = Cocobase(CocobaseConfig(apiKey: "YOUR_API_KEY"));
+
+      // Create a document
+      final post = await db.createDocument("posts", {
+        "title": "My First Post",
+        "content": "Hello, CocoBase!",
+      });
+
+      print("Created: ${post.id}");
+
+      // List documents
+      final posts = await db.listDocuments("posts");
+      print("All posts: ${posts.length}");
+    }
+    ```
+  </Tab>
+  <Tab title="HTML (CDN)">
+    ```html
+    <script src="https://cdn.jsdelivr.net/npm/cocobase/dist/browser/cocobase.min.js"></script>
+    <script>
+      const { Cocobase } = window.CocobaseSDK;
+      const db = new Cocobase({ apiKey: "YOUR_API_KEY" });
+
+      db.createDocument("posts", { title: "Hello!" })
+        .then(doc => console.log("Created:", doc.id));
+    </script>
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Add authentication
+
+<Tabs>
+  <Tab title="JavaScript / TypeScript">
+    ```typescript
+    // Register a new user
+    const result = await db.auth.register({
+      email: "user@example.com",
+      password: "securePassword123",
+      data: { name: "John Doe" },
+    });
+    console.log("Registered:", result.user.id);
+
+    // Login
+    await db.auth.login({ email: "user@example.com", password: "securePassword123" });
+
+    // Restore session on app reload
+    const { isAuthenticated } = await db.auth.initAuth();
+    if (isAuthenticated) console.log("Welcome back,", db.auth.user?.email);
+    ```
+  </Tab>
+  <Tab title="Flutter / Dart">
+    ```dart
+    // Register
+    await db.auth.register(
+      email: "user@example.com",
+      password: "securePassword123",
+      data: {"name": "John Doe"},
+    );
+
+    // Login
+    await db.auth.login(
+      email: "user@example.com",
+      password: "securePassword123",
+    );
+
+    // Restore session on app start
+    final isAuth = await db.auth.initAuth();
+    if (isAuth) print("Welcome, ${db.auth.user?.email}");
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Add real-time updates
+
+<Tabs>
+  <Tab title="JavaScript / TypeScript">
+    ```typescript
+    // onSnapshot — fires immediately, then on every change
+    const unsub = db.onSnapshot<Post>("posts", (posts) => {
+      renderPosts(posts);
+    });
+
+    // Clean up when done
+    unsub();
+    ```
+  </Tab>
+  <Tab title="Flutter / Dart">
+    ```dart
+    // In a StatefulWidget
+    late VoidCallback _unsub;
+
+    @override
+    void initState() {
+      super.initState();
+      _unsub = db.onSnapshot<Post>(
+        "posts",
+        converter: Post.fromJson,
+        onData: (posts) => setState(() => _posts = posts),
+      );
+    }
+
+    @override
+    void dispose() {
+      _unsub();
+      super.dispose();
+    }
+    ```
+  </Tab>
+</Tabs>
+
+---
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="JavaScript SDK" icon="js" href="/sdk-reference/javascript">
+    Full JS/TS SDK reference — auth, queries, real-time, typed errors
+  </Card>
+  <Card title="Flutter SDK" icon="mobile" href="/sdk-reference/flutter">
+    Full Dart/Flutter SDK — widgets, onSnapshot, pagination
+  </Card>
+  <Card title="MCP Server" icon="robot" href="/sdk-reference/mcp">
+    Manage your project with Claude, Cursor, or any AI tool
+  </Card>
+  <Card title="Cloud Functions" icon="bolt" href="/cloud-functions/introduction">
+    Write Python functions that run server-side
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

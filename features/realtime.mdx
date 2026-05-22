@@ -124,10 +124,9 @@ const rooms = await db.realtime.listRooms();
 console.log(rooms);
 ```
 
-## Multiplayer Games
+## Game Client
 
-For multiplayer games use db.realtime.game() which uses 
-the GameClient. See the Multiplayer section for full docs.
+The `GameClient` supports WebSocket-based game rooms. Use `db.realtime.game()` to connect:
 
 ```javascript
 const game = db.realtime.game("my-game-function");

@@ -1,965 +1,675 @@
 ---
-title: Flutter SDK
-description: Complete guide to using Cocobase with Flutter and Dart
+title: Flutter / Dart SDK
+description: Complete reference for the CocoBase Flutter and Dart SDK (v1.2)
 ---
 
-# Flutter SDK
+# Flutter / Dart SDK
 
-Complete guide to using Cocobase with Flutter and Dart applications.
+The official CocoBase Dart/Flutter SDK — works in Flutter apps, Dart CLI tools, and any Dart runtime.
+
+**Package:** `coco_base_flutter` &nbsp;·&nbsp; **Version:** 1.2.x &nbsp;·&nbsp; **pub.dev:** [pub.dev/packages/coco_base_flutter](https://pub.dev/packages/coco_base_flutter)
 
 ## Installation
 
-Add Cocobase to your `pubspec.yaml`:
+Add to `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  coco_base_flutter: ^1.0.0
+  coco_base_flutter: ^1.2.0
 ```
 
-Install dependencies:
+Then run:
 
 ```bash
 flutter pub get
 ```
 
-## Quick Start
+---
 
-### Initialize Cocobase
+## Initialization
 
 ```dart
 import 'package:coco_base_flutter/coco_base_flutter.dart';
 
-void main() {
+void main() async {
   final db = Cocobase(
     CocobaseConfig(
       apiKey: "YOUR_API_KEY",
-      baseUrl: "https://api.cocobase.buzz", // Optional
-      authStore: myAuthStore, // Optional - custom token storage
+      projectId: "YOUR_PROJECT_ID", // required for cloud functions
+      timeout: 30000,               // per-request timeout in ms (default: 30000)
     ),
   );
 
-  runApp(MyApp());
+  // Restore session on app start (safe — network errors won't log user out)
+  final authenticated = await db.auth.initAuth();
+
+  runApp(MyApp(db: db, authenticated: authenticated));
 }
 ```
 
-### Basic Operations
+### `CocobaseConfig` options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `apiKey` | `String` | — | Your project API key (required) |
+| `projectId` | `String?` | `null` | Project ID (required for cloud functions) |
+| `timeout` | `int` | `30000` | Per-request timeout in ms |
+
+---
+
+## Documents — CRUD
+
+### `listDocuments<T>(collection, ...)`
 
 ```dart
-// List documents
+// All documents (untyped)
 final docs = await db.listDocuments("posts");
 
-// Get single document
-final doc = await db.getDocument("posts", "doc-id");
+// With filters, sorting, pagination
+final docs = await db.listDocuments<Post>(
+  "posts",
+  filters: {
+    'status': 'published',
+    'age__gt': 18,
+  },
+  converter: Post.fromJson,
+);
 
-// Create document
+// Each doc is Document<Post>
+for (final doc in docs) {
+  print(doc.id);
+  print(doc.data.title);   // typed!
+  print(doc.createdAt);
+}
+```
+
+### `getDocument<T>(collection, id)`
+
+```dart
+final doc = await db.getDocument<Post>("posts", "doc-id");
+print(doc.data.title);
+```
+
+### `createDocument<T>(collection, data)`
+
+```dart
+// Untyped
 final created = await db.createDocument("posts", {
-  "title": "My First Post",
-  "content": "Hello World!"
+  "title": "Hello World",
+  "published": true,
 });
+print(created.id); // server-assigned ID
 
-// Update document
-await db.updateDocument("posts", "doc-id", {
-  "title": "Updated Title"
-});
+// Typed — data must have a toJson() method
+final created = await db.createDocument<Post>("posts", Post(
+  title: "Hello World",
+  published: true,
+));
+```
 
-// Delete document
+### `updateDocument(collection, id, data)`
+
+Partial update — only fields you pass are changed. Other fields are preserved.
+
+```dart
+await db.updateDocument("posts", "doc-id", {"title": "New Title"});
+```
+
+### `deleteDocument(collection, id)`
+
+```dart
 await db.deleteDocument("posts", "doc-id");
 ```
 
 ---
 
-## Querying Data
+## Querying
 
-CocoBase Flutter provides two powerful ways to query your data: **Filter Map** (simple) and **QueryBuilder** (advanced).
+### Filter operators
 
-### Method 1: Filter Map (Recommended for Simple Queries)
+| Suffix | Meaning | Example |
+|--------|---------|---------|
+| *(none)* | Equal | `{'status': 'active'}` |
+| `__gt` | Greater than | `{'age__gt': 18}` |
+| `__gte` | Greater or equal | `{'age__gte': 18}` |
+| `__lt` | Less than | `{'price__lt': 100}` |
+| `__lte` | Less or equal | `{'price__lte': 100}` |
+| `__ne` | Not equal | `{'status__ne': 'deleted'}` |
+| `__contains` | Substring | `{'title__contains': 'flutter'}` |
+| `__startswith` | Starts with | `{'email__startswith': 'admin'}` |
+| `__endswith` | Ends with | `{'domain__endswith': '.com'}` |
+| `__in` | In list (comma-sep) | `{'status__in': 'active,pending'}` |
+| `__notin` | Not in list | `{'role__notin': 'bot,spam'}` |
+| `__isnull` | Is null | `{'deletedAt__isnull': true}` |
 
-Pass filters as a simple `Map<String, dynamic>`:
+### QueryBuilder (fluent API)
 
-```dart
-// Find active users older than 18
-final users = await db.listDocuments("users", filters: {
-  'status': 'active',
-  'age__gt': 18,  // __gt = greater than
-});
-```
-
-**Why Filter Map?**
-- ✅ Simple and readable
-- ✅ No need to learn QueryBuilder syntax
-- ✅ Works with all operators
-- ✅ Perfect for beginners
-
-### Method 2: QueryBuilder (For Complex Queries)
-
-For more complex queries, use the fluent QueryBuilder:
+For complex queries, use the fluent `QueryBuilder`:
 
 ```dart
-final users = await db.listDocuments("users",
-  queryBuilder: QueryBuilder()
-    .where('status', 'active')
-    .whereGreaterThan('age', 18)
-    .whereContains('email', '@gmail.com')
-    .orderByDesc('createdAt')
-    .limit(10),
-);
-```
-
-**Why QueryBuilder?**
-- 🔗 **Chainable methods** - Build queries step by step
-- 📝 **Self-documenting** - Method names are clear (`whereGreaterThan`, not `__gt`)
-- 🔍 **IDE support** - Get autocomplete and type hints
-- 🎯 **Complex queries** - Combine multiple conditions easily
-
----
-
-## Operators Reference
-
-### Comparison Operators
-
-| Operator | Filter Map | QueryBuilder Method | Example |
-|----------|-----------|---------------------|---------|
-| Equal | `field: value` | `.where(field, value)` | `'age': 25` |
-| Greater Than | `field__gt` | `.whereGreaterThan(field, value)` | `'age__gt': 18` |
-| Greater or Equal | `field__gte` | `.whereGreaterThanOrEqual(field, value)` | `'age__gte': 18` |
-| Less Than | `field__lt` | `.whereLessThan(field, value)` | `'age__lt': 65` |
-| Less or Equal | `field__lte` | `.whereLessThanOrEqual(field, value)` | `'age__lte': 65` |
-| Not Equal | `field__ne` | `.whereNotEqual(field, value)` | `'status__ne': 'deleted'` |
-
-### String Operators
-
-| Operator | Filter Map | QueryBuilder Method | Example |
-|----------|-----------|---------------------|---------|
-| Contains | `field__contains` | `.whereContains(field, value)` | `'title__contains': 'flutter'` |
-| Starts With | `field__startswith` | `.whereStartsWith(field, value)` | `'email__startswith': 'admin'` |
-| Ends With | `field__endswith` | `.whereEndsWith(field, value)` | `'domain__endswith': '.com'` |
-
-### Array/List Operators
-
-| Operator | Filter Map | QueryBuilder Method | Example |
-|----------|-----------|---------------------|---------|
-| In Array | `field__in` | `.whereIn(field, values)` | `'status__in': 'active,pending'` |
-| Not In Array | `field__notin` | `.whereNotIn(field, values)` | `'status__notin': 'deleted,archived'` |
-
-### Special Operators
-
-| Operator | Filter Map | QueryBuilder Method | Example |
-|----------|-----------|---------------------|---------|
-| Is Null | `field__isnull` | `.whereIsNull(field, bool)` | `'deletedAt__isnull': true` |
-
----
-
-## OR Queries
-
-CocoBase supports three types of OR queries for different needs.
-
-### Type 1: Simple OR Conditions
-
-Use when you want "field1 = value1 **OR** field2 = value2":
-
-```dart
-// Find users with admin role OR with email verified
 final query = QueryBuilder()
-  .or('role', 'admin')
-  .or('emailVerified', true);
+  .where('status', 'published')
+  .whereGreaterThan('price', 10)
+  .whereContains('title', 'flutter')
+  .orderByDesc('createdAt')
+  .limit(20)
+  .offset(0);
 
-final users = await db.listDocuments("users", queryBuilder: query);
+final docs = await db.listDocuments<Post>("posts", queryBuilder: query);
 ```
 
-### Type 2: Multi-Field Search
-
-Use when you want to search across multiple fields:
-
-```dart
-// Search for "john" in name, email, or phone
-final query = QueryBuilder()
-  .searchInFields(['name', 'email', 'phone'], 'john');
-
-final users = await db.listDocuments("users", queryBuilder: query);
-```
-
-### Type 3: Named OR Groups
-
-Use when you want to group OR conditions:
-
-```dart
-// Users where: (role=admin OR role=moderator) AND status=active
-final query = QueryBuilder()
-  .orGroup('roleGroup', 'role', 'admin')
-  .orGroup('roleGroup', 'role', 'moderator')
-  .where('status', 'active');
-
-final users = await db.listDocuments("users", queryBuilder: query);
-```
-
----
-
-## Sorting and Pagination
-
-### Sorting
-
-**Using QueryBuilder:**
-
-```dart
-// Sort by creation date (newest first)
-final query = QueryBuilder()
-  .orderByDesc('createdAt');
-
-// Sort by price (lowest first)
-final query = QueryBuilder()
-  .orderByAsc('price');
-
-// Or use sortBy with explicit order
-final query = QueryBuilder()
-  .sortBy('name', 'asc');
-```
-
-**Using Filter Map:**
-
-```dart
-final books = await db.listDocuments("books", filters: {
-  'orderBy': 'title',  // Sort field
-  'order': 'asc',      // Sort direction
-});
-```
-
-### Pagination
-
-**Using QueryBuilder:**
-
-```dart
-// Get the first 10 documents
-final query = QueryBuilder()
-  .limit(10);
-
-// Skip first 20, get next 10 (page 3)
-final query = QueryBuilder()
-  .limit(10)
-  .offset(20);
-
-// Aliases available
-queryBuilder.take(10);   // same as limit(10)
-queryBuilder.skip(20);   // same as offset(20)
-```
-
-**Using Filter Map:**
-
-```dart
-final books = await db.listDocuments("books", filters: {
-  'limit': 10,
-  'offset': 20,
-});
-```
-
----
-
-## Field Selection and Population
-
-### Select Specific Fields
-
-Include only certain fields in the response:
-
-```dart
-// Only get title and price, not full document
-final query = QueryBuilder()
-  .select('title')
-  .select('price');
-
-// Or select multiple at once
-final query = QueryBuilder()
-  .selectAll(['title', 'price', 'author']);
-
-final books = await db.listDocuments("books", queryBuilder: query);
-```
-
-### Population (Relationships)
-
-Load related documents automatically:
-
-```dart
-// Single relationship
-final query = QueryBuilder()
-  .populate('author');  // Load author details
-
-// Multiple relationships
-final query = QueryBuilder()
-  .populateAll(['author', 'publisher']);
-
-final books = await db.listDocuments("books", queryBuilder: query);
-```
-
----
-
-## Type Conversion & Type Safety
-
-Learn how to work with strongly-typed documents and eliminate null safety issues.
-
-### Why Type Safety?
-
-**Without Type Safety (Dynamic):**
-
-```dart
-final docs = await db.listDocuments("books");  // Returns dynamic data
-
-// ❌ No autocomplete - what fields exist?
-print(docs[0].data['title']);  // Might be null, no type checking
-
-// ❌ Easy to make mistakes
-print(docs[0].data['titulo']);  // Typo - no error at compile time
-
-// ❌ Manual type casting required
-final price = (docs[0].data['price'] as double) * 2;
-```
-
-**With Type Safety (Converted):**
-
-```dart
-final books = await db.listDocuments<Book>("books");
-
-// ✅ Full autocomplete - IDE knows all fields
-print(books[0].data.title);  // Perfect!
-
-// ✅ Compile-time type checking
-// books[0].data.titulo;  // ❌ ERROR: no property 'titulo'
-
-// ✅ No casting needed
-final price = books[0].data.price * 2;  // Dart knows it's double
-```
-
-### Creating Models
-
-**Basic Model:**
-
-```dart
-class Book {
-  final String title;
-  final String author;
-  final double price;
-
-  Book({
-    required this.title,
-    required this.author,
-    required this.price,
-  });
-
-  // Create from JSON (required for type conversion)
-  factory Book.fromJson(Map<String, dynamic> json) {
-    return Book(
-      title: json['title'] as String,
-      author: json['author'] as String,
-      price: (json['price'] as num).toDouble(),
-    );
-  }
-
-  // Convert back to JSON (required for createDocument)
-  Map<String, dynamic> toJson() {
-    return {
-      'title': title,
-      'author': author,
-      'price': price,
-    };
-  }
-}
-```
-
-**Model with Optional Fields:**
-
-```dart
-class Product {
-  final String name;
-  final double price;
-  final String? description;  // Optional
-  final List<String>? tags;   // Optional list
-
-  Product({
-    required this.name,
-    required this.price,
-    this.description,
-    this.tags,
-  });
-
-  factory Product.fromJson(Map<String, dynamic> json) {
-    return Product(
-      name: json['name'] as String,
-      price: (json['price'] as num).toDouble(),
-      description: json['description'] as String?,
-      tags: (json['tags'] as List<dynamic>?)?.cast<String>(),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'price': price,
-      'description': description,
-      'tags': tags,
-    };
-  }
-}
-```
-
-### Registration Methods
-
-**Method 1: Global Registration (Recommended)**
-
-Register converters once in your app initialization:
-
-```dart
-void main() async {
-  final config = CocobaseConfig(apiKey: "YOUR_KEY");
-  final db = Cocobase(config);
-
-  // Register all your converters here
-  CocobaseConverters.register<Book>(Book.fromJson);
-  CocobaseConverters.register<User>(User.fromJson);
-  CocobaseConverters.register<Product>(Product.fromJson);
-
-  runApp(const MyApp());
-}
-```
-
-**Advantages:**
-- ✅ Register once, use everywhere
-- ✅ Cleaner API calls
-- ✅ Best for production code
-
-**Method 2: Explicit Converter (Alternative)**
-
-Pass converter directly to method:
-
-```dart
-// Use when you need one-off conversions
-final books = await db.listDocuments<Book>(
-  "books",
-  converter: Book.fromJson,  // Explicit parameter
-);
-```
-
-**Method 3: Check Before Registering**
-
-```dart
-if (!CocobaseConverters.hasConverter<Book>()) {
-  CocobaseConverters.register<Book>(Book.fromJson);
-}
-
-// Safe to use
-final books = await db.listDocuments<Book>("books");
-```
-
-### Using Converted Documents
-
-**List of Typed Documents:**
-
-```dart
-final books = await db.listDocuments<Book>("books");
-
-// books is List<Document<Book>>
-// Each doc.data is a Book instance
-
-for (var doc in books) {
-  print('ID: ${doc.id}');
-  print('Title: ${doc.data.title}');  // Type-safe!
-  print('Price: \$${doc.data.price}');
-  print('Created: ${doc.createdAt}');
-}
-```
-
-**Single Typed Document:**
-
-```dart
-final doc = await db.getDocument<Book>("books", "doc-id");
-
-// doc is Document<Book>
-// doc.data is a Book instance
-
-print(doc.data.title);
-print(doc.data.author);
-```
-
-**With Query Filters:**
-
-```dart
-// Type-safe querying
-final books = await db.listDocuments<Book>("books",
-  queryBuilder: QueryBuilder()
-    .where('status', 'published')
-    .whereGreaterThan('price', 10)
-    .populate('author')
-    .orderByDesc('publishedAt')
-    .limit(20),
-);
-
-// Process with full type safety
-for (var book in books) {
-  print('${book.data.title} - \$${book.data.price}');
-}
-```
-
-### Creating Documents with Type Safety
-
-When you create new documents, your model class **must have a `toJson()` method**:
-
-```dart
-// Create an instance of your model
-final newBook = Book(
-  title: 'Clean Code',
-  author: 'Robert Martin',
-  price: 45.99,
-);
-
-// Pass it to createDocument - toJson() is called automatically
-final created = await db.createDocument<Book>("books", newBook);
-
-// Result contains the new document ID from the server
-print('Created with ID: ${created.id}');
-print('Title: ${created.data.title}');
-```
-
-**How it works:**
-1. You create a `Book` instance with your data
-2. `createDocument<Book>()` calls `toJson()` automatically to serialize it
-3. The API receives the JSON and stores it
-4. The response is converted back to a `Book` instance using `fromJson()`
-5. You get a `Document<Book>` with the server-assigned ID
-
-### Batch Operations
-
-```dart
-// Batch create - takes List<Map<String, dynamic>>
-final result = await db.batchCreateDocuments(
-  "books",
-  [
-    {"title": "Book 1", "author": "Author 1", "price": 19.99},
-    {"title": "Book 2", "author": "Author 2", "price": 24.99},
-  ],
-);
-print('Created: ${result.created} documents');
-for (var doc in result.documents) {
-  print('ID: ${doc.id}');
-}
-
-// Batch update
-final updateResult = await db.batchUpdateDocuments(
-  "books",
-  [
-    {"id": "doc-1", "status": "published"},
-    {"id": "doc-2", "status": "archived"},
-  ],
-);
-print('Updated: ${updateResult.updated}');
-
-// Batch delete
-final deleteResult = await db.batchDeleteDocuments(
-  "books",
-  ["doc-id-1", "doc-id-2", "doc-id-3"],
-);
-print('Deleted: ${deleteResult.deleted}');
-```
-
-## Advanced Queries
-
-### Count Documents
+**Available QueryBuilder methods:**
+
+| Method | Description |
+|--------|-------------|
+| `.where(field, value)` | Equality filter |
+| `.whereGreaterThan(field, value)` | `field > value` |
+| `.whereGreaterThanOrEqual(field, value)` | `field >= value` |
+| `.whereLessThan(field, value)` | `field < value` |
+| `.whereLessThanOrEqual(field, value)` | `field <= value` |
+| `.whereNotEqual(field, value)` | `field != value` |
+| `.whereContains(field, value)` | Substring match |
+| `.whereStartsWith(field, value)` | Prefix match |
+| `.whereEndsWith(field, value)` | Suffix match |
+| `.whereIn(field, values)` | Field in list |
+| `.whereNotIn(field, values)` | Field not in list |
+| `.whereIsNull(field, bool)` | Null check |
+| `.or(field, value)` | OR condition |
+| `.orGroup(groupName, field, value)` | Named OR group |
+| `.searchInFields(fields, term)` | Multi-field search |
+| `.orderByAsc(field)` | Sort ascending |
+| `.orderByDesc(field)` | Sort descending |
+| `.limit(n)` | Max results |
+| `.offset(n)` | Skip n results |
+| `.select(field)` | Include only field |
+| `.selectAll(fields)` | Include only these fields |
+| `.populate(field)` | Load related document |
+| `.populateAll(fields)` | Load multiple related docs |
+
+### Count & aggregate
 
 ```dart
 final count = await db.countDocuments("users",
   queryBuilder: QueryBuilder().where("status", "active"),
 );
-print('Total: ${count.count}');
-```
+print(count.count);
 
-### Aggregate Documents
-
-```dart
 final result = await db.aggregateDocuments("orders",
   field: "price",
-  operation: "avg", // sum, avg, min, max
+  operation: "avg",  // "sum" | "avg" | "min" | "max"
   filters: {"status": "completed"},
 );
-print('Result: ${result.result}');
-```
-
-### Group By Field
-
-```dart
-final grouped = await db.groupByField("users",
-  field: "role",
-  queryBuilder: QueryBuilder().where("status", "active"),
-);
-for (var group in grouped.items) {
-  print('${group.value}: ${group.count} users');
-}
-```
-
-### Get Collection Schema
-
-```dart
-final schema = await db.getCollectionSchema("users");
-for (var field in schema.fields) {
-  print('${field.name}: ${field.type}');
-}
-```
-
-### Upload File
-
-```dart
-final url = await db.uploadFileFromPath(
-  filepath: "/path/to/file.jpg",
-  fileName: "avatar.jpg",
-);
-print('File URL: $url');
-```
-
-## Collection Management
-
-```dart
-// Create collection
-final col = await db.createCollection("my-collection");
-
-// List all collections
-final cols = await db.listCollections();
-
-// Get a collection
-final col = await db.getCollection("my-collection");
-
-// Update collection name
-await db.updateCollection("my-collection", "new-name");
-
-// Delete collection (WARNING: deletes all documents!)
-await db.deleteCollection("my-collection");
+print(result.result);
 ```
 
 ---
 
-## Advanced Query Examples
+## Type Safety
 
-### Example 1: Search with Filters
-
-Find published books by specific authors:
+Register a converter once at startup, then all calls for that type are automatically converted:
 
 ```dart
-final books = await db.listDocuments<Book>("books",
-  queryBuilder: QueryBuilder()
-    .where('status', 'published')
-    .searchInFields(['title', 'description'], 'flutter')
-    .whereIn('authorId', ['auth1', 'auth2', 'auth3'])
-    .orderByDesc('publishedAt')
-    .limit(20),
+void main() {
+  // Register converters once
+  CocobaseConverters.register<Post>(Post.fromJson);
+  CocobaseConverters.register<User>(User.fromJson);
+
+  runApp(MyApp());
+}
+
+// Model definition
+class Post {
+  final String title;
+  final bool published;
+
+  Post({required this.title, required this.published});
+
+  factory Post.fromJson(Map<String, dynamic> json) => Post(
+    title: json['title'] as String,
+    published: json['published'] as bool? ?? false,
+  );
+
+  Map<String, dynamic> toJson() => {'title': title, 'published': published};
+}
+
+// Now all calls auto-convert
+final posts = await db.listDocuments<Post>("posts");
+print(posts.first.data.title); // typed!
+```
+
+Alternatively pass the converter inline:
+
+```dart
+final posts = await db.listDocuments<Post>(
+  "posts",
+  converter: Post.fromJson,
 );
 ```
 
-### Example 2: Price Range Query
+---
 
-Find products in a price range:
+## Live Queries — `onSnapshot`
+
+Subscribe to a collection. Fires immediately with current data, then again on every create/update/delete. Returns a `VoidCallback` to cancel in `dispose()`.
 
 ```dart
-final products = await db.listDocuments<Product>("products",
-  queryBuilder: QueryBuilder()
-    .whereGreaterThanOrEqual('price', 10)
-    .whereLessThanOrEqual('price', 100)
-    .populate('category'),
+class PostsPage extends StatefulWidget { /* ... */ }
+
+class _PostsPageState extends State<PostsPage> {
+  late VoidCallback _unsub;
+  List<Document<Post>> _posts = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _unsub = db.onSnapshot<Post>(
+      "posts",
+      converter: Post.fromJson,
+      onData: (posts) {
+        setState(() => _posts = posts);
+      },
+      onError: (err) => print("Error: $err"),
+    );
+  }
+
+  @override
+  void dispose() {
+    _unsub(); // cancel subscription
+    super.dispose();
+  }
+}
+```
+
+`onSnapshot` signature:
+
+```dart
+VoidCallback onSnapshot<T>(
+  String collection, {
+  QueryBuilder? queryBuilder,
+  Map<String, dynamic>? filters,
+  T Function(Map<String, dynamic>)? converter,
+  required void Function(List<Document<T>> docs) onData,
+  void Function(CocobaseError error)? onError,
+})
+```
+
+---
+
+## Pagination Helper — `paginate`
+
+Stateful pagination — tracks page position, detects `hasMore`, no backend changes needed.
+
+```dart
+final pager = db.paginate<Post>(
+  "posts",
+  pageSize: 20,
+  queryBuilder: QueryBuilder().orderByDesc('createdAt'),
+  converter: Post.fromJson,
 );
-```
 
-### Example 3: Complex OR Logic
+// Fetch pages
+final page1 = await pager.nextPage();
+// page1.data     → List<Document<Post>>
+// page1.hasMore  → bool
+// page1.page     → int (current page index)
+// page1.pageSize → int
 
-Find premium users (verified OR have payment method):
-
-```dart
-final query = QueryBuilder()
-  .orGroup('premium', 'emailVerified', true)
-  .orGroup('premium', 'paymentMethodId__isnull', false)
-  .where('status', 'active');
-
-final users = await db.listDocuments<User>("users", queryBuilder: query);
-```
-
-### Example 4: Using Filter Map for Complex Query
-
-```dart
-final orders = await db.listDocuments<Order>("orders", filters: {
-  'status': 'completed',
-  'totalAmount__gte': 100,
-  'createdAt__gte': '2024-01-01',
-  'orderBy': 'createdAt',
-  'order': 'desc',
-  'limit': 20,
-  'offset': 0,
-});
+final page2 = await pager.nextPage();
+await pager.prevPage();
+await pager.goToPage(3); // zero-indexed
+pager.reset();            // back to start
 ```
 
 ---
 
 ## Authentication
 
-### Initialize Auth
-```dart
-// Restore session from custom auth store on app start
-await db.initAuth();
-```
+### Register / Login / Logout
 
-### Login
 ```dart
-await db.login("user@example.com", "securePassword123");
-
-// Get user after login
-final user = await db.getCurrentUser();
-print('User ID: ${user.id}');
-print('Email: ${user.email}');
-```
-
-### Register
-```dart
-await db.register(
-  "user@example.com",
-  "securePassword123",
+// Register
+await db.auth.register(
+  email: "user@example.com",
+  password: "SecurePassword123!",
   data: {"username": "johndoe"}, // optional
 );
 
-// Get user after registration
-final user = await db.getCurrentUser();
+// Login
+await db.auth.login(
+  email: "user@example.com",
+  password: "SecurePassword123!",
+);
+
+// Get current user
+final user = await db.auth.getCurrentUser();
+print(user?.email);
+
+// Cached user (no network)
+print(db.auth.user?.email);
+print(db.auth.token);
+
+// Is logged in?
+print(db.auth.isAuthenticated());
+
+// Logout
+db.auth.logout();
 ```
 
-### Logout (synchronous)
-```dart
-db.logout();
-```
+### Restore session — `initAuth`
 
-### Check Authentication
+Call once at app startup. Returns `true` if session was restored. Network errors and server errors do **not** log the user out — only an explicit 401/403 does.
+
 ```dart
-if (db.isAuthenticated()) {
-  print("User is logged in");
+final authenticated = await db.auth.initAuth();
+if (authenticated) {
+  print("Welcome back, ${db.auth.user?.email}");
+} else {
+  showLoginScreen();
 }
 ```
 
-### Get Current User
-```dart
-final user = await db.getCurrentUser();
-```
-
-### Access Current User Object
-```dart
-// db.user holds the cached user object after login/register
-print(db.user?.email);
-```
-
-### Update User
-```dart
-final updated = await db.updateUser(
-  data: {"bio": "Updated bio"},
-  email: "newemail@example.com",
-  password: "newpassword123",
-);
-```
-
----
-
-## Real-time Data
-
-### Watch Collection
+### Reactive auth — `onAuthStateChange`
 
 ```dart
-// Watch a collection for real-time updates
-final conn = db.watchCollection(
-  "posts",
-  (event) {
-    print('Event: ${event['event']}'); // create, update, delete
-    print('Data: ${event['data']}');
-  },
-  connectionName: 'posts-watcher', // optional
-  onConnected: () => print('Connected!'), // optional
-  onConnectionError: () => print('Error!'), // optional
-);
+class _MyAppState extends State<MyApp> {
+  late VoidCallback _unsub;
 
-// Close the connection when done
-db.closeConnection(conn);
-```
+  @override
+  void initState() {
+    super.initState();
+    _unsub = db.auth.onAuthStateChange((user, token) {
+      if (user != null) {
+        Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+    });
+  }
 
----
-
-## Building Reusable Queries
-
-Create query builders as functions:
-
-```dart
-QueryBuilder publishedBooksQuery(String searchTerm) {
-  return QueryBuilder()
-    .where('status', 'published')
-    .searchInFields(['title', 'description'], searchTerm)
-    .orderByDesc('publishedAt')
-    .limit(20);
-}
-
-// Use it anywhere
-final results = await db.listDocuments<Book>("books",
-  queryBuilder: publishedBooksQuery('flutter'),
-);
-```
-
----
-
-## Debugging Queries
-
-### Print the Query String
-
-```dart
-final query = QueryBuilder()
-  .where('status', 'active')
-  .whereGreaterThan('age', 18)
-  .limit(10);
-
-print(query.build());
-// Output: status=active&age__gt=18&limit=10
-```
-
----
-
-## Best Practices
-
-### 1. Always Define fromJson() and toJson()
-
-```dart
-class Book {
-  // ... fields ...
-
-  // Required for reading from API
-  factory Book.fromJson(Map<String, dynamic> json) { ... }
-
-  // Required for creating/updating via API
-  Map<String, dynamic> toJson() { ... }
-}
-```
-
-### 2. Handle Optional Fields
-
-```dart
-class Book {
-  final String? subtitle;  // Optional field
-
-  factory Book.fromJson(Map<String, dynamic> json) {
-    return Book(
-      subtitle: json['subtitle'] as String?,  // Can be null
-    );
+  @override
+  void dispose() {
+    _unsub();
+    super.dispose();
   }
 }
 ```
 
-### 3. Use Type Casting in fromJson()
+### Auth lifecycle callbacks
 
 ```dart
-factory Book.fromJson(Map<String, dynamic> json) {
-  return Book(
-    title: json['title'] as String,  // Type cast for safety
-    price: (json['price'] as num).toDouble(),  // Handle int or double
-    age: json['age'] as int,
-  );
-}
+db.auth.onAuthEvent(AuthCallbacks(
+  onLogin: (user, token) => print("Logged in: ${user.email}"),
+  onRegister: (user, token) => print("Registered: ${user.email}"),
+  onLogout: () => navigateToLogin(),
+  onAuthStateChange: (user, token) {
+    // Fired on initAuth() completion
+    if (user != null) restoreUserState(user);
+  },
+));
 ```
 
-### 4. Register Converters Early
+### Update user
 
 ```dart
-void main() {
-  // Register all converters at app startup
-  CocobaseConverters.register<Book>(Book.fromJson);
-  CocobaseConverters.register<User>(User.fromJson);
-  CocobaseConverters.register<Post>(Post.fromJson);
-
-  runApp(MyApp());
-}
+final updated = await db.auth.updateUser(
+  data: {"bio": "Hello!"},
+  email: "new@example.com",
+  password: "NewPassword123!",
+);
 ```
 
-### 5. Use Filter Map for Simple Queries
+---
+
+## Real-time
+
+### Watch a collection
 
 ```dart
-// Good - simple and readable
-final users = await db.listDocuments("users", filters: {
-  'status': 'active',
-  'age__gte': 18,
+final watcher = db.realtime.collection("posts");
+watcher.connect();
+
+watcher.onCreate((event) => print("New doc: ${event.document}"));
+watcher.onUpdate((event) => print("Updated: ${event.document}"));
+watcher.onDelete((event) => print("Deleted: ${event.document}"));
+
+// Called when WebSocket reconnects after a drop
+watcher.onReconnect(() {
+  print("Reconnected! Refreshing...");
 });
 
-// Use QueryBuilder only when you need complex logic
+// Stop watching
+watcher.disconnect();
 ```
 
-### 6. Always Limit Results
+### Project broadcast
 
 ```dart
-// Good - always set a limit
-final posts = await db.listDocuments("posts", filters: {'limit': 20});
-
-// Bad - could return thousands of documents
-final posts = await db.listDocuments("posts");
+final broadcast = db.realtime.broadcast(userId, userName);
+broadcast.connect();
+broadcast.onMessage((data) => print("Broadcast: $data"));
+broadcast.send({"type": "announcement", "text": "Hello!"});
+broadcast.disconnect();
 ```
 
-### 7. Error Handling
+### Room chat
 
 ```dart
+final room = db.realtime.room("room-id", userId, userName);
+room.connect();
+room.onMessage((msg) => appendMessage(msg));
+room.send({"text": "Hey!"});
+room.disconnect();
+```
+
+---
+
+## Cloud Functions
+
+```dart
+// GET
+final result = await db.functions.get<Map<String, dynamic>>("getStats");
+print(result.result);
+
+// POST
+final result = await db.functions.post<Map<String, dynamic>>(
+  "sendEmail",
+  payload: {"to": "user@example.com", "subject": "Hello"},
+);
+print(result.executionTime); // ms
+print(result.output);        // console output from function
+
+// Full execute with options
+final result = await db.functions.execute<String>(
+  "processOrder",
+  payload: {"orderId": "123"},
+  method: FunctionMethod.post,
+);
+```
+
+---
+
+## Typed Errors
+
+All API errors throw a typed subclass of `CocobaseError`. Use `is` to branch:
+
+```dart
+import 'package:coco_base_flutter/coco_base_flutter.dart';
+
 try {
-  final doc = await db.getDocument<Book>("books", "doc-id");
-  print(doc.data.title);
-} catch (e) {
-  print('Error: $e');
+  await db.getDocument("posts", "bad-id");
+} on NotFoundError {
+  showNotFound(); // 404
+} on UnauthorizedError {
+  redirectToLogin(); // 401
+} on ForbiddenError {
+  showAccessDenied(); // 403
+} on RateLimitError {
+  showRetryMessage(); // 429
+} on ValidationError catch (e) {
+  showFormErrors(e.detail); // 422
+} on ServerError {
+  showServerError(); // 5xx
+} on TimeoutError {
+  showTimeoutMessage();
+} on CocobaseError catch (e) {
+  print("Error ${e.statusCode}: ${e.detail}");
 }
 ```
 
+| Class | Status | When |
+|-------|--------|------|
+| `NotFoundError` | 404 | Resource doesn't exist |
+| `UnauthorizedError` | 401 | Not authenticated |
+| `ForbiddenError` | 403 | Lacks permission |
+| `RateLimitError` | 429 | Too many requests |
+| `ValidationError` | 422 | Invalid input |
+| `ServerError` | 5xx | Server-side failure |
+| `TimeoutError` | — | Request timed out |
+
+All errors expose `statusCode`, `url`, `method`, `detail`, `suggestion`.
+
 ---
 
-## Troubleshooting
+## Widgets (`package:coco_base_flutter/widgets.dart`)
 
-### Issue: Type mismatch error
-
-**Cause:** Field type mismatch in `fromJson()`
+Import the widget library:
 
 ```dart
-// ❌ Wrong - expects String but API returns int
-final age = json['age'] as String;
-
-// ✅ Correct
-final age = json['age'] as int;
+import 'package:coco_base_flutter/widgets.dart';
 ```
 
-### Issue: Converter not registered
+### `CocobaseQuery<T>` — fetch-once widget
 
-**Cause:** Forgot to register converter
-
-```dart
-// ✅ Register first
-CocobaseConverters.register<Book>(Book.fromJson);
-
-// Now it works
-final books = await db.listDocuments<Book>("books");
-```
-
-### Issue: Null safety error
-
-**Cause:** Optional field treated as required
+Fetches a collection once and rebuilds when data arrives. Handles loading and error states automatically.
 
 ```dart
-// ✅ Use nullable type
-class Book {
-  final String? subtitle;  // Optional field
-
-  factory Book.fromJson(Map<String, dynamic> json) {
-    return Book(
-      subtitle: json['subtitle'] as String?,  // Can be null
+CocobaseQuery<Post>(
+  db: db,
+  collection: "posts",
+  converter: Post.fromJson,
+  filters: {'status': 'published'},
+  builder: (context, posts) {
+    return ListView.builder(
+      itemCount: posts.length,
+      itemBuilder: (ctx, i) => Text(posts[i].data.title),
     );
-  }
-}
+  },
+  loadingBuilder: (context) => const CircularProgressIndicator(),
+  errorBuilder: (context, error) => CocobaseErrorWidget(
+    error: error,
+    onRetry: () { /* trigger rebuild */ },
+  ),
+)
 ```
 
----
+### `CocobaseLiveQuery<T>` — real-time widget
 
-## Query Limits
+Stays in sync via WebSocket. Auto-subscribes in `initState`, auto-unsubscribes in `dispose`.
 
-- **Maximum limit**: 1000 documents per request
-- **Offset range**: 0 to 100,000
-- **Field name length**: 255 characters
-- **Filter value length**: 10,000 characters
+```dart
+CocobaseLiveQuery<Post>(
+  db: db,
+  collection: "posts",
+  converter: Post.fromJson,
+  filters: {'published': true},
+  builder: (context, posts) => PostList(posts: posts),
+)
+```
+
+### `CocobaseDocument<T>` — single document widget
+
+Fetches and displays one document by ID.
+
+```dart
+CocobaseDocument<Post>(
+  db: db,
+  collection: "posts",
+  documentId: "doc-123",
+  converter: Post.fromJson,
+  builder: (context, doc) => PostDetail(doc: doc),
+)
+```
+
+### `CocobasePaginatedList<T>` — paginated list
+
+Supports **load-more** and **numbered page** modes.
+
+```dart
+CocobasePaginatedList<Post>(
+  db: db,
+  collection: "posts",
+  converter: Post.fromJson,
+  pageSize: 20,
+  mode: PaginationMode.loadMore,  // or PaginationMode.numbered
+  itemBuilder: (context, doc) => PostCard(doc: doc),
+)
+```
+
+### `CocobaseInfiniteList<T>` — infinite scroll
+
+Auto-loads next page as the user scrolls near the bottom.
+
+```dart
+CocobaseInfiniteList<Post>(
+  db: db,
+  collection: "posts",
+  converter: Post.fromJson,
+  pageSize: 20,
+  itemBuilder: (context, doc) => PostCard(doc: doc),
+  separatorBuilder: (context, index) => const Divider(),
+)
+```
+
+### `CocobaseAuthBuilder` — auth-aware widget
+
+Rebuilds on auth state change. Renders different widgets for authenticated, unauthenticated, and loading states.
+
+```dart
+CocobaseAuthBuilder(
+  db: db,
+  authenticated: (context, user) => HomeScreen(user: user),
+  unauthenticated: (context) => const LoginScreen(),
+  loading: (context) => const SplashScreen(),
+)
+```
+
+### `CocobaseErrorWidget` — typed error display
+
+Shows an appropriate icon and message for each error type, with an optional retry button.
+
+```dart
+CocobaseErrorWidget(
+  error: cocobaseError,
+  onRetry: () => setState(() {}),
+)
+```
+
+### `CocobaseFutureBuilder<T>` — generic async wrapper
+
+```dart
+CocobaseFutureBuilder<Post>(
+  future: db.getDocument<Post>("posts", "doc-id", converter: Post.fromJson),
+  builder: (context, doc) => PostDetail(doc: doc),
+)
+```
+
+### `CocobaseUserAvatar` — user avatar widget
+
+Reads `data['avatar']`, `data['avatar_url']`, or `data['profile_image']` from the user object. Falls back to computed initials if no image is found.
+
+```dart
+CocobaseUserAvatar(
+  user: db.auth.user!,
+  radius: 24,
+)
+```
 
 ---
 
 ## Next Steps
 
-- [JavaScript SDK](/sdk-reference/javascript) - Learn about the JS/TS SDK
-- [Authentication](/core-concepts/authentication) - Deep dive into auth
-- [Querying](/features/querying) - Advanced query techniques
-- [Real-time](/features/realtime) - Real-time data synchronization
+- [JavaScript SDK](/sdk-reference/javascript) — JS/TS equivalent
+- [MCP Server](/sdk-reference/mcp) — AI assistant integration
+- [Authentication guide](/core-concepts/authentication)
+- [Querying guide](/features/querying)
+- [Real-time guide](/features/realtime)

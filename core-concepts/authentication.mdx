@@ -106,7 +106,7 @@ const result = await db.auth.login({
   <Tab title="HTTP">
     ```bash
     # Register
-    curl -X POST https://api.cocobase.buzz/auth-collections/signup \
+    curl -X POST https://api.cocobase.cc/auth-collections/signup \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -119,7 +119,7 @@ const result = await db.auth.login({
       }'
 
     # Login
-    curl -X POST https://api.cocobase.buzz/auth-collections/login \
+    curl -X POST https://api.cocobase.cc/auth-collections/login \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -260,7 +260,7 @@ const userWithData = await db.auth.register({
   <Tab title="HTTP">
     ```bash
 
-curl -X POST https://api.cocobase.buzz/auth-collections/signup \
+curl -X POST https://api.cocobase.cc/auth-collections/signup \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -375,7 +375,7 @@ if (db.auth.isAuthenticated()) {
   <Tab title="HTTP">
     ```bash
 
-curl -X POST https://api.cocobase.buzz/auth-collections/login \
+curl -X POST https://api.cocobase.cc/auth-collections/login \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -388,7 +388,7 @@ curl -X POST https://api.cocobase.buzz/auth-collections/login \
 
     **Use the token in subsequent requests:**
     ```bash
-    curl -X GET https://api.cocobase.buzz/collections/posts \
+    curl -X GET https://api.cocobase.cc/collections/posts \
       -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
     ```
 
@@ -462,7 +462,7 @@ if (db.auth.isAuthenticated()) {
 
   <Tab title="HTTP">
     ```bash
-    curl -X GET https://api.cocobase.buzz/auth-collections/me \
+    curl -X GET https://api.cocobase.cc/auth-collections/me \
       -H "Authorization: Bearer YOUR_USER_TOKEN"
     ```
   </Tab>
@@ -539,7 +539,7 @@ console.log("Updated user:", updatedUser);
   <Tab title="HTTP">
     ```bash
 
-curl -X PATCH https://api.cocobase.buzz/auth-collections/user \
+curl -X PATCH https://api.cocobase.cc/auth-collections/user \
   -H "Authorization: Bearer YOUR_USER_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -610,7 +610,7 @@ End the user session:
   <Tab title="HTTP">
     ```bash
 
-curl -X POST https://api.cocobase.buzz/auth-collections/logout \
+curl -X POST https://api.cocobase.cc/auth-collections/logout \
   -H "Authorization: Bearer YOUR_USER_TOKEN"
    ```
   </Tab>
@@ -640,7 +640,7 @@ curl -X POST https://api.cocobase.buzz/auth-collections/logout \
 
   <Tab title="HTTP">
     ```bash
-    curl -X POST https://api.cocobase.buzz/auth/change-password \
+    curl -X POST https://api.cocobase.cc/auth/change-password \
       -H "Authorization: Bearer YOUR_USER_TOKEN" \
       -H "Content-Type: application/json" \
       -d '{
@@ -679,7 +679,7 @@ curl -X POST https://api.cocobase.buzz/auth-collections/logout \
 
   <Tab title="HTTP">
     ```bash
-    curl -X POST https://api.cocobase.buzz/auth/request-password-reset \
+    curl -X POST https://api.cocobase.cc/auth/request-password-reset \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -720,7 +720,7 @@ curl -X POST https://api.cocobase.buzz/auth-collections/logout \
 
   <Tab title="HTTP">
     ```bash
-    curl -X POST https://api.cocobase.buzz/auth/reset-password \
+    curl -X POST https://api.cocobase.cc/auth/reset-password \
       -H "Content-Type: application/json" \
       -d '{
         "token": "reset_token_from_email",
@@ -820,7 +820,7 @@ Authenticate users with Google, GitHub, and other OAuth providers:
   <Tab title="HTTP">
     ```bash
     # Get OAuth URL
-    curl -X POST https://api.cocobase.buzz/auth/oauth/google/url \
+    curl -X POST https://api.cocobase.cc/auth/oauth/google/url \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -829,7 +829,7 @@ Authenticate users with Google, GitHub, and other OAuth providers:
       }'
 
     # Handle callback
-    curl -X POST https://api.cocobase.buzz/auth/oauth/google/callback \
+    curl -X POST https://api.cocobase.cc/auth/oauth/google/callback \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -893,11 +893,11 @@ Authenticate users with Google, GitHub, and other OAuth providers:
   <Tab title="HTTP">
     ```bash
     # Enable 2FA
-    curl -X POST https://api.cocobase.buzz/auth/2fa/enable \
+    curl -X POST https://api.cocobase.cc/auth/2fa/enable \
       -H "Authorization: Bearer YOUR_USER_TOKEN"
 
     # Verify 2FA
-    curl -X POST https://api.cocobase.buzz/auth/2fa/verify \
+    curl -X POST https://api.cocobase.cc/auth/2fa/verify \
       -H "Authorization: Bearer YOUR_USER_TOKEN" \
       -H "Content-Type: application/json" \
       -d '{
@@ -956,7 +956,7 @@ if (result.requires_2fa) {
     ```bash
 
 # Login
-curl -X POST https://api.cocobase.buzz/auth-collections/login \
+curl -X POST https://api.cocobase.cc/auth-collections/login \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -965,7 +965,7 @@ curl -X POST https://api.cocobase.buzz/auth-collections/login \
   }'
 
 # Complete 2FA login
-curl -X POST https://api.cocobase.buzz/auth-collections/verify-2fa-login \
+curl -X POST https://api.cocobase.cc/auth-collections/verify-2fa-login \
   -H "x-api-key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1015,11 +1015,11 @@ Verify user email addresses to ensure account authenticity and improve security.
   <Tab title="HTTP">
     ```bash
     # Request verification
-    curl -X POST https://api.cocobase.buzz/auth/request-verification \
+    curl -X POST https://api.cocobase.cc/auth/request-verification \
       -H "Authorization: Bearer YOUR_USER_TOKEN"
 
     # Verify email
-    curl -X POST https://api.cocobase.buzz/auth/verify-email \
+    curl -X POST https://api.cocobase.cc/auth/verify-email \
       -H "Content-Type: application/json" \
       -d '{
         "token": "verification_token_from_email"
@@ -1123,7 +1123,7 @@ if (db.auth.isAuthenticated()) {
   <Tab title="HTTP">
     ```bash
     # Register with role
-    curl -X POST https://api.cocobase.buzz/auth/register \
+    curl -X POST https://api.cocobase.cc/auth/register \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{

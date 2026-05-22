@@ -12,7 +12,7 @@ Subscribe to real-time changes in a collection using WebSockets or Server-Sent E
 ### Endpoint
 
 ```
-wss://api.cocobase.buzz/realtime
+wss://api.cocobase.cc/realtime
 ```
 
 ### Authentication
@@ -68,7 +68,7 @@ Send authentication message after connecting:
 ## JavaScript Example
 
 ```javascript
-const ws = new WebSocket("wss://api.cocobase.buzz/realtime");
+const ws = new WebSocket("wss://api.cocobase.cc/realtime");
 
 ws.onopen = () => {
   // Authenticate
@@ -137,7 +137,7 @@ GET /realtime/sse/{collection}
 ### Example
 
 ```bash
-curl -N "https://api.cocobase.buzz/realtime/sse/posts" \
+curl -N "https://api.cocobase.cc/realtime/sse/posts" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Accept: text/event-stream"
 ```
@@ -150,7 +150,7 @@ const params = new URLSearchParams({
 });
 
 const eventSource = new EventSource(
-  `https://api.cocobase.buzz/realtime/sse/posts?${params}`,
+  `https://api.cocobase.cc/realtime/sse/posts?${params}`,
   {
     headers: {
       Authorization: "Bearer YOUR_API_KEY",

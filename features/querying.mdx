@@ -110,7 +110,7 @@ func main() {
 import requests
 
 API_KEY = 'your-api-key'
-BASE_URL = 'https://api.cocobase.buzz'
+BASE_URL = 'https://api.cocobase.cc'
 headers = {'X-API-Key': API_KEY}
 
 # Simple equality
@@ -138,11 +138,11 @@ response = requests.get(
 <Tab title="HTTP">
 ```bash
 # Simple equality
-curl "https://api.cocobase.buzz/collections/users/documents?status=active" \
+curl "https://api.cocobase.cc/collections/users/documents?status=active" \
   -H "X-API-Key: your-api-key"
 
 # Multiple filters (AND logic)
-curl "https://api.cocobase.buzz/collections/users/documents?status=active&role=admin&verified=true" \
+curl "https://api.cocobase.cc/collections/users/documents?status=active&role=admin&verified=true" \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>
@@ -312,27 +312,27 @@ mid_age = requests.get(
 <Tab title="HTTP">
 ```bash
 # Greater than
-curl "https://api.cocobase.buzz/collections/users/documents?age_gt=65" \
+curl "https://api.cocobase.cc/collections/users/documents?age_gt=65" \
   -H "X-API-Key: your-api-key"
 
 # Greater than or equal
-curl "https://api.cocobase.buzz/collections/users/documents?age_gte=18" \
+curl "https://api.cocobase.cc/collections/users/documents?age_gte=18" \
   -H "X-API-Key: your-api-key"
 
 # Less than
-curl "https://api.cocobase.buzz/collections/users/documents?age_lt=18" \
+curl "https://api.cocobase.cc/collections/users/documents?age_lt=18" \
   -H "X-API-Key: your-api-key"
 
 # Less than or equal
-curl "https://api.cocobase.buzz/collections/users/documents?age_lte=65" \
+curl "https://api.cocobase.cc/collections/users/documents?age_lte=65" \
   -H "X-API-Key: your-api-key"
 
 # Not equal
-curl "https://api.cocobase.buzz/collections/users/documents?role_ne=admin" \
+curl "https://api.cocobase.cc/collections/users/documents?role_ne=admin" \
   -H "X-API-Key: your-api-key"
 
 # Between (range)
-curl "https://api.cocobase.buzz/collections/users/documents?age_gte=25&age_lte=40" \
+curl "https://api.cocobase.cc/collections/users/documents?age_gte=25&age_lte=40" \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>
@@ -460,19 +460,19 @@ specific = requests.get(
 <Tab title="HTTP">
 ```bash
 # Contains (case-insensitive)
-curl "https://api.cocobase.buzz/collections/users/documents?name_contains=john" \
+curl "https://api.cocobase.cc/collections/users/documents?name_contains=john" \
   -H "X-API-Key: your-api-key"
 
 # Starts with
-curl "https://api.cocobase.buzz/collections/users/documents?email_startswith=admin" \
+curl "https://api.cocobase.cc/collections/users/documents?email_startswith=admin" \
   -H "X-API-Key: your-api-key"
 
 # Ends with
-curl "https://api.cocobase.buzz/collections/users/documents?email_endswith=@gmail.com" \
+curl "https://api.cocobase.cc/collections/users/documents?email_endswith=@gmail.com" \
   -H "X-API-Key: your-api-key"
 
 # Multiple string filters
-curl "https://api.cocobase.buzz/collections/users/documents?name_contains=john&email_endswith=@example.com" \
+curl "https://api.cocobase.cc/collections/users/documents?name_contains=john&email_endswith=@example.com" \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>
@@ -564,15 +564,15 @@ followers = requests.get(
 <Tab title="HTTP">
 ```bash
 # In - match any of the values
-curl "https://api.cocobase.buzz/collections/users/documents?role_in=admin,moderator,support" \
+curl "https://api.cocobase.cc/collections/users/documents?role_in=admin,moderator,support" \
   -H "X-API-Key: your-api-key"
 
 # Not in - exclude values
-curl "https://api.cocobase.buzz/collections/users/documents?status_notin=deleted,banned,suspended" \
+curl "https://api.cocobase.cc/collections/users/documents?status_notin=deleted,banned,suspended" \
   -H "X-API-Key: your-api-key"
 
 # Array contains
-curl "https://api.cocobase.buzz/collections/users/documents?followers_array_contains=user_123" \
+curl "https://api.cocobase.cc/collections/users/documents?followers_array_contains=user_123" \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>
@@ -667,11 +667,11 @@ search_results = requests.get(
 <Tab title="HTTP">
 ```bash
 # Simple OR - match any condition
-curl "https://api.cocobase.buzz/collections/users/documents?[or]role=admin&[or]isPremium=true" \
+curl "https://api.cocobase.cc/collections/users/documents?[or]role=admin&[or]isPremium=true" \
   -H "X-API-Key: your-api-key"
 
 # Multi-field search
-curl "https://api.cocobase.buzz/collections/users/documents?name__or__email_contains=john" \
+curl "https://api.cocobase.cc/collections/users/documents?name__or__email_contains=john" \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>
@@ -778,11 +778,11 @@ eligible_users = requests.get(
 <Tab title="HTTP">
 ```bash
 # Active users who are (admin OR moderator)
-curl "https://api.cocobase.buzz/collections/users/documents?status=active&[or]role=admin&[or]role=moderator" \
+curl "https://api.cocobase.cc/collections/users/documents?status=active&[or]role=admin&[or]role=moderator" \
   -H "X-API-Key: your-api-key"
 
 # Named OR groups
-curl "https://api.cocobase.buzz/collections/users/documents?status=active&[or:tier]isPremium=true&[or:tier]isVerified=true" \
+curl "https://api.cocobase.cc/collections/users/documents?status=active&[or:tier]isPremium=true&[or:tier]isVerified=true" \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>
@@ -882,11 +882,11 @@ newest = requests.get(
 <Tab title="HTTP">
 ```bash
 # Sort ascending
-curl "https://api.cocobase.buzz/collections/users/documents?orderBy=name&order=asc" \
+curl "https://api.cocobase.cc/collections/users/documents?orderBy=name&order=asc" \
   -H "X-API-Key: your-api-key"
 
 # Sort descending
-curl "https://api.cocobase.buzz/collections/users/documents?orderBy=created_at&order=desc" \
+curl "https://api.cocobase.cc/collections/users/documents?orderBy=created_at&order=desc" \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>
@@ -1002,15 +1002,15 @@ page3 = get_page(3)
 <Tab title="HTTP">
 ```bash
 # Get first page (10 items)
-curl "https://api.cocobase.buzz/collections/users/documents?limit=10&offset=0" \
+curl "https://api.cocobase.cc/collections/users/documents?limit=10&offset=0" \
   -H "X-API-Key: your-api-key"
 
 # Get next page
-curl "https://api.cocobase.buzz/collections/users/documents?limit=10&offset=10" \
+curl "https://api.cocobase.cc/collections/users/documents?limit=10&offset=10" \
   -H "X-API-Key: your-api-key"
 
 # Page 3
-curl "https://api.cocobase.buzz/collections/users/documents?limit=10&offset=20" \
+curl "https://api.cocobase.cc/collections/users/documents?limit=10&offset=20" \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>
@@ -1130,7 +1130,7 @@ users = requests.get(
 <Tab title="HTTP">
 ```bash
 # All parameters in URL
-curl "https://api.cocobase.buzz/collections/users/documents?status=active&age_gte=18&role_in=admin,moderator&orderBy=created_at&order=desc&limit=20" \
+curl "https://api.cocobase.cc/collections/users/documents?status=active&age_gte=18&role_in=admin,moderator&orderBy=created_at&order=desc&limit=20" \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>
@@ -1238,7 +1238,7 @@ laptops = search_products('laptop', 500, 2000, 'electronics')
 
 <Tab title="HTTP">
 ```bash
-curl "https://api.cocobase.buzz/collections/products/documents?name_contains=laptop&price_gte=500&price_lte=2000&category=electronics&inStock=true&orderBy=popularity&order=desc&limit=24" \
+curl "https://api.cocobase.cc/collections/products/documents?name_contains=laptop&price_gte=500&price_lte=2000&category=electronics&inStock=true&orderBy=popularity&order=desc&limit=24" \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>
@@ -1332,7 +1332,7 @@ my_feed = get_user_feed('user-123')
 
 <Tab title="HTTP">
 ```bash
-curl "https://api.cocobase.buzz/collections/posts/documents?%5Bor%5Dauthor_id=user-123&%5Bor%5Dfollowers_array_contains=user-123&status=published&orderBy=created_at&order=desc&limit=20&offset=0" \
+curl "https://api.cocobase.cc/collections/posts/documents?%5Bor%5Dauthor_id=user-123&%5Bor%5Dfollowers_array_contains=user-123&status=published&orderBy=created_at&order=desc&limit=20&offset=0" \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>

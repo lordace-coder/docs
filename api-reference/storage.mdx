@@ -35,7 +35,7 @@ Upload a file using `multipart/form-data`.
 <Tabs>
 <Tab title="cURL">
 ```bash
-curl -X POST https://api.cocobase.buzz/storage/upload \
+curl -X POST https://api.cocobase.cc/storage/upload \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -F "file=@/path/to/image.jpg" \
   -F "path=products/"
@@ -47,7 +47,7 @@ const formData = new FormData();
 formData.append('file', fileInput.files[0]);
 formData.append('path', 'uploads/');
 
-const res = await fetch('https://api.cocobase.buzz/storage/upload', {
+const res = await fetch('https://api.cocobase.cc/storage/upload', {
   method: 'POST',
   headers: { 'Authorization': 'Bearer YOUR_KEY' },
   body: formData
@@ -80,7 +80,7 @@ Cocobase allows you to upload files as part of a document or user update. This i
 
 ### User Profile Update with Avatar
 ```bash
-curl -X PATCH https://api.cocobase.buzz/auth-collections/user \
+curl -X PATCH https://api.cocobase.cc/auth-collections/user \
   -H "Authorization: Bearer <token>" \
   -F "avatar=@/path/to/avatar.jpg" \
   -F "data={\"bio\": \"Hello world\"}"
@@ -88,7 +88,7 @@ curl -X PATCH https://api.cocobase.buzz/auth-collections/user \
 
 ### Document Creation with Files
 ```bash
-curl -X POST https://api.cocobase.buzz/collections/posts \
+curl -X POST https://api.cocobase.cc/collections/posts \
   -H "Authorization: Bearer <key>" \
   -F "image=@/path/to/post.jpg" \
   -F "data={\"title\": \"My Post\"}"

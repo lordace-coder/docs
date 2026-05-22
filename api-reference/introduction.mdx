@@ -10,7 +10,7 @@ The Cocobase REST API allows you to interact with your database using standard H
 ## Base URL
 
 ```
-https://api.cocobase.buzz
+https://api.cocobase.cc
 ```
 
 ## Authentication
@@ -92,7 +92,7 @@ List endpoints support pagination with these parameters:
 ### Create a Document
 
 ```bash
-curl -X POST https://api.cocobase.buzz/collections/posts \
+curl -X POST https://api.cocobase.cc/collections/posts \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"title": "Hello World", "content": "My first post"}'
@@ -101,14 +101,14 @@ curl -X POST https://api.cocobase.buzz/collections/posts \
 ### List Documents
 
 ```bash
-curl https://api.cocobase.buzz/collections/posts?limit=10 \
+curl https://api.cocobase.cc/collections/posts?limit=10 \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
 ### Get a Document
 
 ```bash
-curl https://api.cocobase.buzz/collections/posts/DOC_ID \
+curl https://api.cocobase.cc/collections/posts/DOC_ID \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 

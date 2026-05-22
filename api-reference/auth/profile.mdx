@@ -30,7 +30,7 @@ GET /auth/me
     "id": "user_abc123",
     "email": "user@example.com",
     "name": "John Doe",
-    "avatar": "https://storage.cocobase.buzz/avatars/abc123.jpg",
+    "avatar": "https://storage.cocobase.cc/avatars/abc123.jpg",
     "createdAt": "2024-01-15T10:30:00Z",
     "updatedAt": "2024-01-15T10:30:00Z"
   }
@@ -40,7 +40,7 @@ GET /auth/me
 ### Example
 
 ```bash
-curl https://api.cocobase.buzz/auth/me \
+curl https://api.cocobase.cc/auth/me \
   -H "Authorization: Bearer USER_JWT_TOKEN"
 ```
 
@@ -87,7 +87,7 @@ PATCH /auth/me
 ### Example
 
 ```bash
-curl -X PATCH https://api.cocobase.buzz/auth/me \
+curl -X PATCH https://api.cocobase.cc/auth/me \
   -H "Authorization: Bearer USER_JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -105,7 +105,7 @@ curl -X PATCH https://api.cocobase.buzz/auth/me \
 // Get profile
 const token = localStorage.getItem("authToken");
 
-const response = await fetch("https://api.cocobase.buzz/auth/me", {
+const response = await fetch("https://api.cocobase.cc/auth/me", {
   headers: {
     Authorization: `Bearer ${token}`,
   },
@@ -115,7 +115,7 @@ const { data: user } = await response.json();
 console.log(user.name);
 
 // Update profile
-const updateResponse = await fetch("https://api.cocobase.buzz/auth/me", {
+const updateResponse = await fetch("https://api.cocobase.cc/auth/me", {
   method: "PATCH",
   headers: {
     Authorization: `Bearer ${token}`,
@@ -139,7 +139,7 @@ headers = {"Authorization": f"Bearer {token}"}
 
 # Get profile
 response = requests.get(
-    "https://api.cocobase.buzz/auth/me",
+    "https://api.cocobase.cc/auth/me",
     headers=headers,
 )
 user = response.json()["data"]
@@ -147,7 +147,7 @@ print(user["name"])
 
 # Update profile
 update_response = requests.patch(
-    "https://api.cocobase.buzz/auth/me",
+    "https://api.cocobase.cc/auth/me",
     headers={**headers, "Content-Type": "application/json"},
     json={"name": "New Name"},
 )

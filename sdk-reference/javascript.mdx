@@ -1,628 +1,494 @@
 ---
-title: JavaScript SDK
-description: Complete guide to using Cocobase with JavaScript and TypeScript
+title: JavaScript / TypeScript SDK
+description: Complete reference for the CocoBase JavaScript and TypeScript SDK (v1.6)
 ---
 
-# JavaScript SDK
+# JavaScript / TypeScript SDK
 
-Complete guide to using Cocobase with JavaScript and TypeScript applications.
+The official CocoBase JS SDK — works in browsers, Node.js, Next.js, SvelteKit, Nuxt, React Native, and any JS runtime.
+
+**Package:** `cocobase` &nbsp;·&nbsp; **Version:** 1.6.x &nbsp;·&nbsp; **npm:** [npmjs.com/package/cocobase](https://www.npmjs.com/package/cocobase)
 
 ## Installation
 
-**npm:**
+<Tabs>
+  <Tab title="npm">
+    ```bash
+    npm install cocobase
+    ```
+  </Tab>
+  <Tab title="yarn">
+    ```bash
+    yarn add cocobase
+    ```
+  </Tab>
+  <Tab title="pnpm">
+    ```bash
+    pnpm add cocobase
+    ```
+  </Tab>
+  <Tab title="Browser (CDN)">
+    ```html
+    <script src="https://cdn.jsdelivr.net/npm/cocobase/dist/browser/cocobase.min.js"></script>
+    <script>
+      const { Cocobase } = window.CocobaseSDK;
+      const db = new Cocobase({ apiKey: "YOUR_API_KEY" });
+    </script>
+    ```
+  </Tab>
+</Tabs>
 
-```bash
-npm install cocobase
-```
+---
 
-**yarn:**
-
-```bash
-yarn add cocobase
-```
-
-**pnpm:**
-
-```bash
-pnpm add cocobase
-```
-
-## Quick Start
-
-### Initialize Cocobase
+## Initialization
 
 ```typescript
 import { Cocobase } from "cocobase";
 
 const db = new Cocobase({
   apiKey: "YOUR_API_KEY",
-  projectId: "YOUR_PROJECT_ID",
-  baseURL: "https://api.cocobase.buzz", // Optional, defaults to this
+  projectId: "YOUR_PROJECT_ID", // required for cloud functions
+  timeout: 30000,               // request timeout in ms (default: 30000)
 });
 ```
 
-### Basic Operations
+### SSR / Server-side (Next.js, Node.js)
+
+By default the SDK auto-detects the environment and uses in-memory storage when `localStorage` is not available. For explicit control:
 
 ```typescript
-// List documents
-const docs = await db.listDocuments("posts");
+import { Cocobase, memoryStorageAdapter, cookieStorageAdapter } from "cocobase";
 
-// Get single document
-const doc = await db.getDocument("posts", "doc-id");
-
-// Create document
-const created = await db.createDocument("posts", {
-  title: "My First Post",
-  content: "Hello World!",
+// Node.js / SSR — in-memory, no persistence
+const db = new Cocobase({
+  apiKey: process.env.COCOBASE_API_KEY!,
+  storage: memoryStorageAdapter(),
 });
 
-// Update document
-await db.updateDocument("posts", "doc-id", {
-  title: "Updated Title",
+// Browser — keep auth token in a cookie instead of localStorage
+const db = new Cocobase({
+  apiKey: "YOUR_API_KEY",
+  storage: cookieStorageAdapter({ secure: true, sameSite: "lax" }),
+});
+```
+
+### `CocobaseConfig` options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `apiKey` | `string` | — | Your project API key (required) |
+| `projectId` | `string` | `""` | Project ID (required for cloud functions) |
+| `timeout` | `number` | `30000` | Per-request timeout in ms |
+| `storage` | `StorageAdapter` | auto-detect | Token persistence adapter |
+
+---
+
+## Documents — CRUD
+
+### `listDocuments<T>(collection, query?)`
+
+```typescript
+// All documents
+const posts = await db.listDocuments("posts");
+
+// With filters, sorting, pagination
+const posts = await db.listDocuments<Post>("posts", {
+  filters: { status: "published", age__gt: 18 },
+  sort: "createdAt",
+  order: "desc",
+  limit: 20,
+  offset: 0,
 });
 
-// Delete document
+// doc.data is typed as Post
+posts.forEach(doc => console.log(doc.data.title, doc.id, doc.createdAt));
+```
+
+### `getDocument<T>(collection, id)`
+
+```typescript
+const doc = await db.getDocument<Post>("posts", "doc-id");
+console.log(doc.data.title);
+```
+
+### `createDocument<T>(collection, data)`
+
+```typescript
+const created = await db.createDocument<Post>("posts", {
+  title: "Hello World",
+  published: true,
+});
+console.log(created.id); // server-assigned ID
+```
+
+### `updateDocument<T>(collection, id, data)`
+
+Partial update — only fields you pass are changed. Other fields are preserved.
+
+```typescript
+await db.updateDocument("posts", "doc-id", { title: "New Title" });
+```
+
+### `replaceDocument<T>(collection, id, data)`
+
+Full replace — sends all fields, replaces the document entirely.
+
+```typescript
+await db.replaceDocument("settings", "config-1", { theme: "dark", lang: "en" });
+```
+
+### `deleteDocument(collection, id)`
+
+```typescript
 await db.deleteDocument("posts", "doc-id");
 ```
 
-## update_document vs update_document_fields
+---
 
-These two methods behave very differently. Understanding 
-the difference is critical to avoid accidentally losing data.
-
-### updateDocument - Replaces entire document
-WARNING: This replaces ALL fields. Any field not 
-included will be permanently deleted.
-
-// Original document:
-// { name: "John", age: 25, city: "Lagos", role: "admin" }
-
-await db.updateDocument("users", "user-123", {
-  name: "John Doe"
-});
-
-// Result: { name: "John Doe" }
-// age, city and role are GONE!
-
-### updateDocumentFields - Updates only specified fields
-This is the safe option. Only updates fields you provide.
-All other fields remain untouched.
-
-// Original document:
-// { name: "John", age: 25, city: "Lagos", role: "admin" }
-
-await db.updateDocumentFields("users", "user-123", {
-  name: "John Doe"
-});
-
-// Result: { name: "John Doe", age: 25, city: "Lagos", role: "admin" }
-// Only name was updated, everything else preserved!
-
-Use updateDocument when you want to completely 
-replace a document with new data.
-
-Use updateDocumentFields when you want to partially 
-update specific fields only. This is the safer and 
-more common choice.
-
-### Batch Operations
+## Batch Operations
 
 ```typescript
-// Create multiple documents
+// Create multiple
 await db.createDocuments("users", [
   { name: "Alice", email: "alice@example.com" },
   { name: "Bob", email: "bob@example.com" },
 ]);
 
-// Delete multiple documents
+// Delete multiple
 await db.deleteDocuments("users", ["id-1", "id-2", "id-3"]);
 
-// Update multiple documents
+// Update multiple (id → fields map)
 await db.updateDocuments("users", {
   "id-1": { status: "active" },
   "id-2": { status: "inactive" },
 });
 ```
 
-### Counting & Aggregation
+---
+
+## Querying
+
+### Filter operators
+
+| Suffix | Meaning | Example |
+|--------|---------|---------|
+| *(none)* | Equal | `{ status: "active" }` |
+| `__gt` | Greater than | `{ age__gt: 18 }` |
+| `__gte` | Greater or equal | `{ age__gte: 18 }` |
+| `__lt` | Less than | `{ price__lt: 100 }` |
+| `__lte` | Less or equal | `{ price__lte: 100 }` |
+| `__ne` | Not equal | `{ status__ne: "deleted" }` |
+| `__contains` | Substring match | `{ title__contains: "flutter" }` |
+| `__startswith` | Starts with | `{ email__startswith: "admin" }` |
+| `__endswith` | Ends with | `{ domain__endswith: ".com" }` |
+| `__in` | In list (comma-sep) | `{ status__in: "active,pending" }` |
+| `__notin` | Not in list | `{ role__notin: "bot,spam" }` |
+| `__isnull` | Is null / not null | `{ deletedAt__isnull: true }` |
+
+### Sorting & pagination
 
 ```typescript
-// Count documents matching a filter
+const posts = await db.listDocuments<Post>("posts", {
+  sort: "createdAt",
+  order: "desc",   // "asc" | "desc"
+  limit: 20,
+  offset: 40,      // skip first 40 (page 3 of 20)
+});
+```
+
+### Count & aggregate
+
+```typescript
 const { count } = await db.countDocuments("users", {
-  filters: { status: "active" }
+  filters: { status: "active" },
 });
 
-// Aggregate (sum, avg, min, max, count)
 const result = await db.aggregateDocuments("orders", {
   field: "price",
-  operation: "avg",
-  query: { filters: { status: "completed" } }
+  operation: "avg",  // "sum" | "avg" | "min" | "max" | "count"
+  query: { filters: { status: "completed" } },
 });
 console.log(result.result); // average order price
 ```
 
----
-
-## Querying Data
-
-### Simple Filters
+### File + document combined
 
 ```typescript
-// Find active users older than 18
-const users = await db.listDocuments("users", {
-  filters: {
-    status: "active",
-    age__gt: 18,
-  },
-});
-```
+// Create a document AND upload files in one call
+await db.createDocumentWithFiles(
+  "posts",
+  { title: "Post with Image" },
+  { image: file, gallery: [img1, img2] }
+);
 
-
-
----
-
-## Operators Reference
-
-### Comparison Operators
-
-| Operator | Filter Key | Example |
-|----------|-----------|---------|
-| Equal | `field` | `{ status: "active" }` |
-| Greater Than | `field__gt` | `{ age__gt: 18 }` |
-| Greater or Equal | `field__gte` | `{ age__gte: 18 }` |
-| Less Than | `field__lt` | `{ age__lt: 65 }` |
-| Less or Equal | `field__lte` | `{ age__lte: 65 }` |
-| Not Equal | `field__ne` | `{ status__ne: "deleted" }` |
-
-### String Operators
-
-| Operator | Filter Key | Example |
-|----------|-----------|---------|
-| Contains | `field__contains` | `{ title__contains: "javascript" }` |
-| Starts With | `field__startswith` | `{ email__startswith: "admin" }` |
-| Ends With | `field__endswith` | `{ domain__endswith: ".com" }` |
-
-### Array Operators
-
-| Operator | Filter Key | Example |
-|----------|-----------|---------|
-| In Array | `field__in` | `{ status__in: "active,pending" }` |
-| Not In Array | `field__notin` | `{ status__notin: "deleted,archived" }` |
-
----
-
-## Sorting and Pagination
-
-### Sorting
-
-```typescript
-// Sort by creation date (newest first)
-const posts = await db.listDocuments("posts", {
-  sort: "createdAt",
-  order: "desc",
-});
-```
-
-### Pagination
-
-```typescript
-// Get page 3 (20 items per page)
-const posts = await db.listDocuments("posts", {
-  limit: 20,
-  offset: 40,
-});
+// Update document AND files
+await db.updateDocumentWithFiles(
+  "users",
+  "user-123",
+  { bio: "Updated bio" },
+  { avatar: newAvatarFile }
+);
 ```
 
 ---
 
-## Type Safety with TypeScript
+## Live Queries — `onSnapshot`
 
-### Define Your Types
+Subscribe to a collection and get called immediately with current data, then again whenever anything changes (create/update/delete). Returns an unsubscribe function to call on cleanup.
 
 ```typescript
-interface Book {
-  title: string;
-  author: string;
-  price: number;
-  publishedAt?: string;
-}
-
-// Typed list
-const books = await db.listDocuments<Book>("books");
-
-// Full type safety
-books.forEach((doc) => {
-  console.log(doc.data.title); // TypeScript knows this is a string
-  console.log(doc.data.price); // TypeScript knows this is a number
+// Simple — fires immediately, then on every change
+const unsub = db.onSnapshot<Post>("posts", (posts) => {
+  renderPosts(posts); // posts is Document<Post>[]
 });
 
-// Typed single document
-const book = await db.getDocument<Book>("books", "doc-id");
-console.log(book.data.author);
+// With query
+const unsub = db.onSnapshot<Post>(
+  "posts",
+  { filters: { published: true }, sort: "createdAt", order: "desc" },
+  (posts) => renderPosts(posts)
+);
+
+// Cleanup (e.g. component unmount)
+unsub();
 ```
 
-### Create Typed Documents
+**React example:**
 
 ```typescript
-const newBook: Book = {
-  title: "Clean Code",
-  author: "Robert Martin",
-  price: 45.99,
-};
+useEffect(() => {
+  return db.onSnapshot<Post>("posts", setPosts);
+}, []);
+```
 
-const created = await db.createDocument<Book>("books", newBook);
-console.log(created.id);
+---
+
+## Pagination Helper — `paginate`
+
+Stateful pagination — tracks page position, detects `hasMore`, no backend changes needed.
+
+```typescript
+const pager = db.paginate<Post>("posts", { sort: "createdAt", order: "desc" }, 20);
+
+// Fetch pages
+const page1 = await pager.nextPage();
+// page1.data        → Document<Post>[]
+// page1.hasMore     → boolean
+// page1.page        → current page index
+// page1.pageSize    → 20
+
+const page2 = await pager.nextPage();
+await pager.prevPage();
+await pager.goToPage(3); // zero-indexed
+pager.reset();            // start over from page 0
 ```
 
 ---
 
 ## Authentication
 
-### Email/Password
+### Register / Login / Logout
 
 ```typescript
 // Register
-await db.auth.register({
+const result = await db.auth.register({
   email: "user@example.com",
   password: "securePassword123",
-  data: { username: "johndoe" } // optional extra fields
+  data: { username: "johndoe" }, // optional custom fields
 });
-
-// Get user after registration
-const user = await db.auth.getUser();
-console.log("User ID:", user.id);
+console.log(result.user.id, result.token);
 
 // Login
-await db.auth.login({
+const result = await db.auth.login({
   email: "user@example.com",
   password: "securePassword123",
 });
-
-// Get user after login
-const loggedInUser = await db.auth.getUser();
 
 // Logout
 await db.auth.logout();
 
-// Check current user
-const currentUser = await db.auth.getCurrentUser();
+// Get current user (from server)
+const user = await db.auth.getCurrentUser();
+
+// Cached user (no network call)
+console.log(db.auth.user?.email);
+console.log(db.auth.token);
+
+// Is logged in?
+console.log(db.auth.isAuthenticated());
+```
+
+### Restore session on app load — `initAuth`
+
+Call once on startup to restore a saved session. Safe on servers — network errors and 5xx responses do **not** log the user out (only explicit 401/403 from the server do).
+
+```typescript
+const { user, token, isAuthenticated } = await db.auth.initAuth();
+
+if (isAuthenticated) {
+  console.log("Welcome back,", user?.email);
+} else {
+  showLoginScreen();
+}
+
+// SSR — pass token from request header/cookie
+const { isAuthenticated } = await db.auth.initAuth(req.cookies["cocobase-token"]);
+```
+
+### `onAuthStateChange` — reactive auth
+
+Returns an unsubscribe function. Works like Firebase's `onAuthStateChanged`.
+
+```typescript
+const unsub = db.auth.onAuthStateChange((user, token) => {
+  if (user) setLoggedIn(true);
+  else setLoggedIn(false);
+});
+
+// Cleanup
+unsub();
+```
+
+### `onAuthEvent` — all auth lifecycle events
+
+```typescript
+db.auth.onAuthEvent({
+  onLogin: (user, token) => console.log("Logged in:", user.email),
+  onRegister: (user, token) => console.log("Registered:", user.email),
+  onLogout: () => redirectToLogin(),
+  onUserUpdate: (user) => updateUserStore(user),
+  onAuthStateChange: (user, token) => {
+    // fired on initAuth() completion
+    if (user) restoreUserState(user);
+  },
+  onAuthRestored: (user, isAuthenticated) => {
+    // fired when initAuth() finishes — remove loading spinners here
+    setLoading(false);
+  },
+});
 ```
 
 ### OAuth
 
 ```typescript
-// Google OAuth (requires Google ID token)
+// Google (requires Google ID token)
 const user = await db.auth.loginWithGoogle({
   idToken: "google-id-token",
-  platform: "web" // or "android" / "ios"
-});
-```
-
----
-
-## Advanced Authentication
-
-### Auth Event Callbacks
-
-Use onAuthEvent to react to authentication state changes 
-across your app. Register callbacks once when your app 
-initializes.
-
-```javascript
-db.auth.onAuthEvent({
-  onLogin: (user, token) => {
-    console.log("User logged in:", user.email);
-    // Update your app state
-  },
-  onRegister: (user, token) => {
-    console.log("User registered:", user.email);
-    // Redirect to onboarding
-  },
-  onLogout: () => {
-    console.log("User logged out");
-    // Redirect to login page
-  },
-  onUserUpdate: (user) => {
-    console.log("User profile updated:", user.email);
-    // Refresh user data in your app
-  },
-  onTokenChange: (token) => {
-    console.log("Token refreshed");
-    // Update stored token
-  },
-  onAuthStateChange: (user, token) => {
-    // Called on initAuth() - use to restore session
-    if (user) {
-      console.log("Session restored:", user.email);
-    } else {
-      console.log("No active session");
-    }
-  }
+  platform: "web", // "web" | "android" | "ios"
 });
 
-// Remove all callbacks when done (e.g. component unmount)
-db.auth.clearAuthCallbacks();
-```
-
-Note: onAuthEvent is framework-agnostic. Use it to 
-update React state, Vue stores, or Svelte stores 
-without polling. Register once on app initialization.
-
-### Google OAuth
-
-```typescript
-const user = await db.auth.loginWithGoogle({
-  idToken: "google-id-token",
-  platform: "web" // or "mobile", "ios", "android"
-});
-console.log("Logged in:", user.email);
-```
-
-### GitHub OAuth
-
-```typescript
-// 1. Redirect user to GitHub OAuth URL
-const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}`;
-window.location.href = githubAuthUrl;
-
-// 2. Handle callback with the code
-const code = new URLSearchParams(window.location.search).get("code");
+// GitHub
 const user = await db.auth.loginWithGithub({
-  code: code,
-  redirectUri: "http://localhost:3000/auth/github/callback",
-  platform: "web"
+  code: new URLSearchParams(window.location.search).get("code")!,
+  redirectUri: "https://myapp.com/auth/github/callback",
+  platform: "web",
 });
-console.log("Logged in:", user.email);
-```
-
-### Role Checking
-
-```typescript
-if (db.auth.hasRole("admin")) {
-  console.log("User is an admin");
-}
-```
-
-### List Users
-
-```typescript
-const users = await db.auth.listUsers({
-  filters: { status: "active" },
-  limit: 10
-});
-console.log("Total users:", users.total);
-```
-
-### Get User By ID
-
-```typescript
-const user = await db.auth.getUserById("user-123");
-console.log("User:", user.email);
-```
-
-### Password Reset
-
-```typescript
-// Request reset email
-await db.auth.requestPasswordReset("user@example.com");
-console.log("Reset email sent");
-```
-
-### Email Verification
-
-```typescript
-// Request verification email
-await db.auth.requestEmailVerification();
-
-// Verify with token from email
-await db.auth.verifyEmail("verification-token-from-email");
-
-// Resend verification email
-await db.auth.resendVerificationEmail();
 ```
 
 ### Two-Factor Authentication (2FA)
 
 ```typescript
-// Enable 2FA for current user
-await db.auth.enable2FA();
-console.log("2FA enabled");
-
-// Disable 2FA
-await db.auth.disable2FA();
-console.log("2FA disabled");
-
-// Send 2FA code to email
-await db.auth.send2FACode("user@example.com");
-
-// Login flow when 2FA is enabled
-const result = await db.auth.login({
-  email: "user@example.com",
-  password: "password123"
-});
+const result = await db.auth.login({ email, password });
 
 if (result.requires_2fa) {
-  console.log("2FA required:", result.message);
-  
-  // After user enters their code
+  // Prompt user for code then:
   const user = await db.auth.verify2FALogin({
     email: "user@example.com",
-    code: "123456"
+    code: "123456",
   });
-  console.log("2FA login successful:", user.email);
-} else {
-  console.log("Logged in:", result.user?.email);
 }
+```
+
+### Other auth methods
+
+```typescript
+// Password reset
+await db.auth.requestPasswordReset("user@example.com");
+
+// Email verification
+await db.auth.requestEmailVerification();
+await db.auth.verifyEmail("token-from-email");
+await db.auth.resendVerificationEmail();
+
+// 2FA management
+await db.auth.enable2FA();
+await db.auth.disable2FA();
+await db.auth.send2FACode("user@example.com");
+
+// List users (admin)
+const { users, total } = await db.auth.listUsers({ limit: 20 });
+
+// Get user by ID
+const user = await db.auth.getUserById("user-123");
+
+// Update profile
+const updated = await db.auth.updateUser({
+  data: { bio: "Hello!" },
+  email: "new@example.com",
+});
+
+// Role check
+if (db.auth.hasRole("admin")) { /* ... */ }
+```
+
+### Token helpers
+
+```typescript
+const expiry = db.auth.getTokenExpiry(); // Date | null
+const expired = db.auth.isTokenExpired(); // boolean
 ```
 
 ---
 
-## Real-time Data
+## Real-time
 
-### Watch a Collection
-
-```typescript
-const watcher = db.realtime.collection("posts", { status: "active" });
-// watcher is a CollectionWatcher instance
-```
-
-### Project Broadcast
+### Watch a collection
 
 ```typescript
-const broadcast = db.realtime.broadcast(userId, userName);
+import { CollectionWatcher } from "cocobase";
+
+const watcher: CollectionWatcher = db.realtime.collection("posts", { status: "active" });
+watcher.connect();
+
+watcher.onCreate(({ document }) => console.log("New:", document));
+watcher.onUpdate(({ document }) => console.log("Updated:", document));
+watcher.onDelete(({ document }) => console.log("Deleted:", document));
+
+// Called whenever WebSocket reconnects after a drop
+watcher.onReconnect(() => console.log("Reconnected, refreshing..."));
+
+// Stop watching
+watcher.disconnect();
 ```
 
-### Room Chat
+### Project broadcast (pub/sub)
 
 ```typescript
-const room = db.realtime.room("room-id", userId, userName);
+import { ProjectBroadcast } from "cocobase";
+
+const broadcast: ProjectBroadcast = db.realtime.broadcast(userId, userName);
+broadcast.connect();
+
+broadcast.onMessage((data) => console.log("Message:", data));
+broadcast.send({ type: "announcement", text: "Hello everyone!" });
+
+broadcast.disconnect();
 ```
 
-### Multiplayer Game
+### Room chat
 
-### Initialize Game Client
 ```typescript
-const game = db.realtime.game("my-game-function");
+import { RoomChat } from "cocobase";
+
+const room: RoomChat = db.realtime.room("room-id", userId, userName);
+room.connect();
+room.onMessage((msg) => appendMessage(msg));
+room.send({ text: "Hey!" });
+
+room.disconnect();
 ```
 
-### Connect to a Room
-```typescript
-// Basic connection
-await game.connect({ roomId: "game-room-1" });
-
-// With authentication
-await game.connect({
-  roomId: "private-game",
-  token: userJwtToken
-});
-
-// With metadata (sent to server on connect)
-await game.connect({
-  roomId: "game-1",
-  metadata: { playerName: "John", team: "red" }
-});
-```
-
-### Listen for Events
-```typescript
-// Listen for connection
-game.on("connected", (data) => {
-  console.log("Connected! My player ID:", data.your_id);
-});
-
-// Listen for players joining/leaving
-game.on("player_joined", (data) => {
-  console.log("Player joined:", data.player_id);
-});
-
-game.on("player_left", (data) => {
-  console.log("Player left:", data.player_id);
-});
-
-// Listen for game state updates
-game.on("state", (data) => {
-  renderPlayers(data.players);
-});
-
-// Listen for tick events
-game.on("tick", (data) => {
-  updateGameLoop(data);
-});
-
-// Listen for errors
-game.on("error", (data) => {
-  console.error("Game error:", data);
-});
-
-// Listen for disconnection
-game.on("disconnected", (data) => {
-  console.log("Disconnected:", data.reason);
-});
-
-// Listen to ALL events (wildcard)
-game.on("*", ({ event, data }) => {
-  console.log("Event:", event, data);
-});
-```
-
-### One-time Event Listener
-```typescript
-// Called once then automatically removed
-game.once("connected", (data) => {
-  console.log("Connected with ID:", data.your_id);
-});
-```
-
-### Remove Event Listeners
-```typescript
-// Remove specific listener
-const unsub = game.on("player_joined", handler);
-unsub(); // unsubscribe
-
-// Remove specific listener by reference
-game.off("player_joined", handler);
-
-// Remove all listeners for an event
-game.removeAllListeners("player_joined");
-
-// Remove ALL listeners
-game.removeAllListeners();
-```
-
-### Send Actions to Server
-```typescript
-// Send a move action
-game.send({ action: "move", x: 100, y: 200 });
-
-// Send a chat message
-game.send({ action: "chat", message: "Hello!" });
-
-// Send any custom action
-game.send({ action: "shoot", angle: 45, power: 80 });
-```
-
-### Check Connection Status
-```typescript
-// Check if connected
-if (game.isConnected) {
-  console.log("Connected");
-}
-
-// Get current player ID
-console.log("My ID:", game.playerId);
-```
-
-### Disconnect
-```typescript
-// Disconnect and disable auto-reconnect
-game.disconnect();
-
-// Disconnect but keep auto-reconnect enabled
-game.disconnect(false);
-```
-
-### Auto-Reconnect
-```typescript
-// Auto-reconnect is enabled by default with exponential backoff
-// Disable it
-game.setAutoReconnect(false);
-
-// Re-enable it
-game.setAutoReconnect(true);
-```
-
-### List Game Rooms
-```typescript
-const { rooms, total } = await db.realtime.listGameRooms();
-rooms.forEach(room => {
-  console.log(`${room.room_id}: ${room.player_count}/${room.max_players} players`);
-});
-
-// List all rooms including private
-const { rooms } = await db.realtime.listGameRooms(false);
-```
-
-### List Rooms
+### List rooms
 
 ```typescript
 const rooms = await db.realtime.listRooms();
@@ -630,97 +496,118 @@ const rooms = await db.realtime.listRooms();
 
 ---
 
-## File Storage
+## Cloud Functions
 
 ```typescript
-// Create a document with files
-await db.createDocumentWithFiles(
-  "posts",
-  { title: "Post with Image", content: "Hello!" },
-  {
-    image: file,             // single file
-    gallery: [img1, img2]    // multiple files
-  }
-);
+const result = await db.functions.execute<{ orderId: string }>("processOrder", {
+  payload: { items: [{ id: "p1", qty: 2 }] },
+  method: "post",
+});
+console.log(result.result.orderId);
+console.log(result.executionTime); // ms
+console.log(result.output);        // console output from function
 
-// Update a document with files
-await db.updateDocumentWithFiles(
-  "users",
-  "user-123",
-  { bio: "Updated bio" },   // optional data update
-  { avatar: newAvatarFile } // optional file update
-);
+// Shorthand helpers
+await db.functions.get<Stats>("getStats");
+await db.functions.post<Receipt>("sendEmail", { payload: { to: "a@b.com" } });
 ```
 
 ---
 
-## Error Handling
+## Typed Errors
+
+All API errors throw a typed subclass of `CocobaseError`. Use `instanceof` to branch:
 
 ```typescript
+import {
+  NotFoundError,
+  UnauthorizedError,
+  ForbiddenError,
+  RateLimitError,
+  ValidationError,
+  ServerError,
+  TimeoutError,
+  CocobaseError,
+} from "cocobase";
+
 try {
-  const doc = await db.getDocument("posts", "non-existent-id");
-} catch (error) {
-  if (error.code === "NOT_FOUND") {
-    console.log("Document not found");
-  } else if (error.code === "UNAUTHORIZED") {
-    console.log("Not authorized");
+  await db.getDocument("posts", "bad-id");
+} catch (e) {
+  if (e instanceof NotFoundError) {
+    showNotFound(); // 404
+  } else if (e instanceof UnauthorizedError) {
+    redirectToLogin(); // 401
+  } else if (e instanceof ForbiddenError) {
+    showAccessDenied(); // 403
+  } else if (e instanceof RateLimitError) {
+    showRetryMessage(); // 429
+  } else if (e instanceof ValidationError) {
+    showFormErrors(e.detail); // 422
+  } else if (e instanceof ServerError) {
+    showServerError(); // 5xx
+  } else if (e instanceof TimeoutError) {
+    showTimeoutMessage();
   } else {
-    console.log("Error:", error.message);
+    throw e;
   }
 }
 ```
 
+All error classes expose:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `statusCode` | `number` | HTTP status code |
+| `url` | `string` | Request URL |
+| `method` | `string` | HTTP method |
+| `detail` | `unknown` | Raw server error body |
+| `suggestion` | `string` | Human-readable fix hint |
+
 ---
 
-## Best Practices
-
-### 1. Always Use Types
+## Storage Adapters
 
 ```typescript
-// Good
-const books = await db.listDocuments<Book>("books");
+import {
+  localStorageAdapter,  // browser localStorage (default in browser)
+  memoryStorageAdapter, // in-memory, no persistence (default in Node)
+  autoStorageAdapter,   // auto-detects browser vs Node
+  cookieStorageAdapter, // browser cookie — SSR-readable
+} from "cocobase";
 
-// Avoid
-const books = await db.listDocuments("books");
-```
-
-### 2. Always Set Limits
-
-```typescript
-// Good
-const posts = await db.listDocuments("posts", {
-  limit: 20,
+// Cookie adapter options
+const storage = cookieStorageAdapter({
+  cookieName: "cocobase-token", // default
+  secure: true,                 // HTTPS only
+  sameSite: "lax",
+  maxAge: 60 * 60 * 24 * 7,    // 7 days
 });
-
-// Bad - could return thousands
-const posts = await db.listDocuments("posts");
 ```
 
-### 3. Handle Errors
+---
+
+## TypeScript Types
+
+Key types exported from `cocobase`:
 
 ```typescript
-try {
-  const doc = await db.getDocument("posts", id);
-  return doc;
-} catch (error) {
-  console.error("Failed to fetch:", error);
-  return null;
-}
-```
-
-### 4. Use Environment Variables
-
-```typescript
-const db = new Cocobase({
-  apiKey: process.env.COCOBASE_API_KEY,
-});
+import type {
+  Document,       // { id, data, createdAt, updatedAt }
+  AppUser,        // { id, email, data, roles, ... }
+  Page,           // { data, hasMore, page, pageSize, offset }
+  CocobaseConfig,
+  Query,
+  StorageAdapter,
+  WatcherEvent,
+} from "cocobase";
 ```
 
 ---
 
 ## Next Steps
 
-- [Flutter SDK](/sdk-reference/flutter) - Learn about the Flutter SDK
-- [Authentication](/core-concepts/authentication) - Deep dive into auth
-- [Querying](/features/querying) - Advanced query techniques
-- [Real-time](/features/realtime) - Real-time data synchronization
+- [Flutter SDK](/sdk-reference/flutter) — Dart/Flutter equivalent
+- [MCP Server](/sdk-reference/mcp) — AI assistant integration
+- [Authentication guide](/core-concepts/authentication)
+- [Querying guide](/features/querying)
+- [Real-time guide](/features/realtime)

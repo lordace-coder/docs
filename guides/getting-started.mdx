@@ -11,7 +11,7 @@ Welcome to Cocobase! This guide will help you set up and make your first API cal
 
 Before you begin, make sure you have:
 
-1. A Cocobase account - [Sign up for free](https://cocobase.buzz)
+1. A Cocobase account - [Sign up for free](https://cocobase.cc)
 2. An API key from your project dashboard
 3. Your development environment set up for your preferred language
 
@@ -114,7 +114,7 @@ Initialize Cocobase with your API key:
       // Create configuration
       final config = CocobaseConfig(
         apiKey: "YOUR_API_KEY",
-        baseUrl: "https://api.cocobase.buzz", // Optional
+        baseUrl: "https://api.cocobase.cc", // Optional
       );
 
       // Initialize client
@@ -159,7 +159,7 @@ Initialize Cocobase with your API key:
     ```go
     client := cocobase.NewClient(cocobase.Config{
         APIKey:     os.Getenv("COCOBASE_API_KEY"),
-        BaseURL:    "https://api.cocobase.buzz",
+        BaseURL:    "https://api.cocobase.cc",
         HTTPClient: &http.Client{Timeout: 30 * time.Second},
     })
     ```
@@ -189,7 +189,7 @@ Initialize Cocobase with your API key:
 
     **Base URL:**
     ```
-    https://api.cocobase.buzz
+    https://api.cocobase.cc
     ```
 
     **Headers:**
@@ -316,7 +316,7 @@ Let's create a document in a collection called "users":
 
   <Tab title="HTTP">
     ```bash
-    curl -X POST https://api.cocobase.buzz/collections/users \
+    curl -X POST https://api.cocobase.cc/collections/users \
       -H "Authorization: Bearer YOUR_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -407,11 +407,11 @@ Now let's retrieve the document we just created:
   <Tab title="HTTP">
     ```bash
     # Get all users
-    curl -X GET https://api.cocobase.buzz/collections/users \
+    curl -X GET https://api.cocobase.cc/collections/users \
       -H "Authorization: Bearer YOUR_API_KEY"
 
     # Get a specific user by ID
-    curl -X GET https://api.cocobase.buzz/collections/users/507f1f77bcf86cd799439011 \
+    curl -X GET https://api.cocobase.cc/collections/users/507f1f77bcf86cd799439011 \
       -H "Authorization: Bearer YOUR_API_KEY"
     ```
 
@@ -509,7 +509,7 @@ Now that you've made your first request, explore these features:
 
 <AccordionGroup>
   <Accordion title="Authentication Error: Invalid API Key">
-    Make sure your API key is correct and active. You can find it in your [Cocobase dashboard](https://cocobase.buzz/dashboard).
+    Make sure your API key is correct and active. You can find it in your [Cocobase dashboard](https://cocobase.cc/dashboard).
   </Accordion>
 
   <Accordion title="CORS Error in Browser">
@@ -525,4 +525,4 @@ Now that you've made your first request, explore these features:
 
 - Join our [Discord community](https://discord.gg/cocobase)
 - Check out [code examples](/examples)
-- Email us at hello@cocobase.buzz
+- Email us at hello@cocobase.cc

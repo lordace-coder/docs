@@ -185,7 +185,7 @@ print(f"Created user: {user['id']}")
 
 <Tab title="HTTP">
 ```bash
-curl -X POST https://api.cocobase.buzz/collections/users/documents \
+curl -X POST https://api.cocobase.cc/collections/users/documents \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -326,7 +326,7 @@ print(f"Created: {user['data']['name']}")
 ```bash
 # HTTP requests are inherently untyped
 # Use JSON schema validation if needed
-curl -X POST https://api.cocobase.buzz/collections/users/documents \
+curl -X POST https://api.cocobase.cc/collections/users/documents \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -425,7 +425,7 @@ print(f"Created {len(users)} users")
 
 <Tab title="HTTP">
 ```bash
-curl -X POST https://api.cocobase.buzz/collections/users/batch/documents \
+curl -X POST https://api.cocobase.cc/collections/users/batch/documents \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -489,7 +489,7 @@ print(f"User: {user['data']}")
 
 <Tab title="HTTP">
 ```bash
-curl https://api.cocobase.buzz/collections/users/documents/user-123 \
+curl https://api.cocobase.cc/collections/users/documents/user-123 \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>
@@ -532,7 +532,7 @@ print(f"Total users: {len(all_users)}")
 
 <Tab title="HTTP">
 ```bash
-curl https://api.cocobase.buzz/collections/users/documents \
+curl https://api.cocobase.cc/collections/users/documents \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>
@@ -628,15 +628,15 @@ specific_users = db.list_documents('users', filters={
 <Tab title="HTTP">
 ```bash
 # Get active users
-curl "https://api.cocobase.buzz/collections/users/documents?active=true" \
+curl "https://api.cocobase.cc/collections/users/documents?active=true" \
   -H "X-API-Key: your-api-key"
 
 # Get users older than 25
-curl "https://api.cocobase.buzz/collections/users/documents?age_gte=25" \
+curl "https://api.cocobase.cc/collections/users/documents?age_gte=25" \
   -H "X-API-Key: your-api-key"
 
 # Multiple filters (AND logic)
-curl "https://api.cocobase.buzz/collections/users/documents?active=true&age_gte=25&age_lte=40" \
+curl "https://api.cocobase.cc/collections/users/documents?active=true&age_gte=25&age_lte=40" \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>
@@ -738,15 +738,15 @@ page3 = get_page(3)  # Users 21-30
 <Tab title="HTTP">
 ```bash
 # Get first page (10 users)
-curl "https://api.cocobase.buzz/collections/users/documents?limit=10&offset=0" \
+curl "https://api.cocobase.cc/collections/users/documents?limit=10&offset=0" \
   -H "X-API-Key: your-api-key"
 
 # Get second page
-curl "https://api.cocobase.buzz/collections/users/documents?limit=10&offset=10" \
+curl "https://api.cocobase.cc/collections/users/documents?limit=10&offset=10" \
   -H "X-API-Key: your-api-key"
 
 # Get page 3
-curl "https://api.cocobase.buzz/collections/users/documents?limit=10&offset=20" \
+curl "https://api.cocobase.cc/collections/users/documents?limit=10&offset=20" \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>
@@ -815,7 +815,7 @@ print("User updated")
 
 <Tab title="HTTP">
 ```bash
-curl -X PATCH https://api.cocobase.buzz/collections/users/documents/user-123 \
+curl -X PATCH https://api.cocobase.cc/collections/users/documents/user-123 \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -893,7 +893,7 @@ for doc_id, data in updates.items():
 
 <Tab title="HTTP">
 ```bash
-curl -X POST https://api.cocobase.buzz/collections/users/batch/documents/update \
+curl -X POST https://api.cocobase.cc/collections/users/batch/documents/update \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -949,7 +949,7 @@ print("User deleted")
 
 <Tab title="HTTP">
 ```bash
-curl -X DELETE https://api.cocobase.buzz/collections/users/documents/user-123 \
+curl -X DELETE https://api.cocobase.cc/collections/users/documents/user-123 \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>
@@ -1005,7 +1005,7 @@ print(f"Deleted {len(ids_to_delete)} documents")
 
 <Tab title="HTTP">
 ```bash
-curl -X POST https://api.cocobase.buzz/collections/users/batch/documents/delete \
+curl -X POST https://api.cocobase.cc/collections/users/batch/documents/delete \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1088,7 +1088,7 @@ active_users = db.list_documents('users', filters={
 <Tab title="HTTP">
 ```bash
 # Mark as deleted
-curl -X PATCH https://api.cocobase.buzz/collections/users/documents/user-123 \
+curl -X PATCH https://api.cocobase.cc/collections/users/documents/user-123 \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1097,7 +1097,7 @@ curl -X PATCH https://api.cocobase.buzz/collections/users/documents/user-123 \
   }'
 
 # Query non-deleted items
-curl "https://api.cocobase.buzz/collections/users/documents?deleted=false" \
+curl "https://api.cocobase.cc/collections/users/documents?deleted=false" \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>

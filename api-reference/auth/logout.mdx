@@ -35,7 +35,7 @@ POST /auth/logout
 ### cURL
 
 ```bash
-curl -X POST https://api.cocobase.buzz/auth/logout \
+curl -X POST https://api.cocobase.cc/auth/logout \
   -H "Authorization: Bearer USER_JWT_TOKEN"
 ```
 
@@ -44,7 +44,7 @@ curl -X POST https://api.cocobase.buzz/auth/logout \
 ```javascript
 const token = localStorage.getItem("authToken");
 
-const response = await fetch("https://api.cocobase.buzz/auth/logout", {
+const response = await fetch("https://api.cocobase.cc/auth/logout", {
   method: "POST",
   headers: {
     Authorization: `Bearer ${token}`,
@@ -69,7 +69,7 @@ import requests
 token = "USER_JWT_TOKEN"
 
 response = requests.post(
-    "https://api.cocobase.buzz/auth/logout",
+    "https://api.cocobase.cc/auth/logout",
     headers={"Authorization": f"Bearer {token}"},
 )
 

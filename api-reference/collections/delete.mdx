@@ -37,7 +37,7 @@ DELETE /collections/{collection}/{id}
 ### cURL
 
 ```bash
-curl -X DELETE https://api.cocobase.buzz/collections/posts/doc_abc123 \
+curl -X DELETE https://api.cocobase.cc/collections/posts/doc_abc123 \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
@@ -45,7 +45,7 @@ curl -X DELETE https://api.cocobase.buzz/collections/posts/doc_abc123 \
 
 ```javascript
 const response = await fetch(
-  "https://api.cocobase.buzz/collections/posts/doc_abc123",
+  "https://api.cocobase.cc/collections/posts/doc_abc123",
   {
     method: "DELETE",
     headers: {
@@ -64,7 +64,7 @@ console.log(result.data.deleted); // true
 import requests
 
 response = requests.delete(
-    "https://api.cocobase.buzz/collections/posts/doc_abc123",
+    "https://api.cocobase.cc/collections/posts/doc_abc123",
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
 
@@ -103,7 +103,7 @@ POST /collections/{collection}/batch-delete
 ### Example
 
 ```bash
-curl -X POST https://api.cocobase.buzz/collections/posts/batch-delete \
+curl -X POST https://api.cocobase.cc/collections/posts/batch-delete \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{

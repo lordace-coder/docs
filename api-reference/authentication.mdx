@@ -125,7 +125,7 @@ Use `$append` and `$remove` to modify array fields (like followers/following) wi
 ### Update with File Upload
 To update a user with files (e.g., avatar), use `multipart/form-data`.
 ```bash
-curl -X PATCH https://api.cocobase.buzz/auth-collections/user \
+curl -X PATCH https://api.cocobase.cc/auth-collections/user \
   -H "Authorization: Bearer <token>" \
   -F "data={\"bio\": \"New bio\"}" \
   -F "avatar=@/path/to/image.jpg"
@@ -210,13 +210,13 @@ Users can have relationships like `followers` and `following`. These are typical
 <Tab title="JavaScript">
 ```javascript
 // Register
-const signup = await fetch('https://api.cocobase.buzz/auth-collections/signup', {
+const signup = await fetch('https://api.cocobase.cc/auth-collections/signup', {
   method: 'POST',
   body: JSON.stringify({ email, password, data })
 });
 
 // Update (Follow)
-await fetch('https://api.cocobase.buzz/auth-collections/user', {
+await fetch('https://api.cocobase.cc/auth-collections/user', {
   method: 'PATCH',
   headers: { 'Authorization': `Bearer ${token}` },
   body: JSON.stringify({
@@ -230,12 +230,12 @@ await fetch('https://api.cocobase.buzz/auth-collections/user', {
 import requests
 
 # Login
-res = requests.post('https://api.cocobase.buzz/auth-collections/login', 
+res = requests.post('https://api.cocobase.cc/auth-collections/login', 
                    json={'email': email, 'password': password})
 token = res.json()['access_token']
 
 # Get User
-user = requests.get('https://api.cocobase.buzz/auth-collections/user',
+user = requests.get('https://api.cocobase.cc/auth-collections/user',
                    headers={'Authorization': f'Bearer {token}'}).json()
 ```
 </Tab>

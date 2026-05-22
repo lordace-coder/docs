@@ -1,0 +1,343 @@
+---
+title: MCP Server & Claude Skill
+description: Use CocoBase from Claude, Cursor, Windsurf, and any AI tool via the Model Context Protocol
+---
+
+# MCP Server & Claude Skill
+
+CocoBase ships an official **MCP (Model Context Protocol) server** that lets any AI assistant — Claude Code, Claude Desktop, Cursor, Windsurf, Continue, or any MCP-compatible tool — manage your project directly.
+
+**Package:** `cocobase-mcp` &nbsp;·&nbsp; **npm:** [npmjs.com/package/cocobase-mcp](https://www.npmjs.com/package/cocobase-mcp)
+
+---
+
+## What is the MCP Server?
+
+The CocoBase MCP server exposes your entire project as AI-callable tools. Instead of switching to the dashboard or writing scripts, you can tell your AI assistant:
+
+> "Create a collection called `orders`, add these three documents to it, and set up a cron job that runs the `send-daily-digest` function every morning at 9 AM."
+
+The AI handles it — no manual steps, no copy-pasting IDs.
+
+---
+
+## Setup
+
+### Step 1 — Install globally
+
+```bash
+npm install -g cocobase-mcp
+```
+
+Or use `npx` (no install needed):
+
+```bash
+npx cocobase-mcp
+```
+
+### Step 2 — Get your credentials
+
+From your [CocoBase dashboard](https://app.cocobase.cc):
+
+- **API Key** — project settings → API Key
+- **Project ID** — project settings → Project ID
+- **Email + Password** — your CocoBase account credentials (needed for cloud function and cron job management)
+
+### Step 3 — Configure your AI tool
+
+<Tabs>
+  <Tab title="Claude Code">
+    Add to your project's `.mcp.json`:
+
+    ```json
+    {
+      "mcpServers": {
+        "cocobase": {
+          "command": "npx",
+          "args": ["-y", "cocobase-mcp"],
+          "env": {
+            "COCOBASE_API_KEY": "your-api-key",
+            "COCOBASE_PROJECT_ID": "your-project-id",
+            "COCOBASE_EMAIL": "you@example.com",
+            "COCOBASE_PASSWORD": "your-password"
+          }
+        }
+      }
+    }
+    ```
+
+    Or to your global `~/.claude/mcp.json` to use it in all projects.
+  </Tab>
+  <Tab title="Claude Desktop">
+    Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+
+    ```json
+    {
+      "mcpServers": {
+        "cocobase": {
+          "command": "npx",
+          "args": ["-y", "cocobase-mcp"],
+          "env": {
+            "COCOBASE_API_KEY": "your-api-key",
+            "COCOBASE_PROJECT_ID": "your-project-id",
+            "COCOBASE_EMAIL": "you@example.com",
+            "COCOBASE_PASSWORD": "your-password"
+          }
+        }
+      }
+    }
+    ```
+
+    Restart Claude Desktop after saving.
+  </Tab>
+  <Tab title="Cursor / Windsurf">
+    Add to your MCP settings (Settings → MCP Servers → Add):
+
+    ```json
+    {
+      "cocobase": {
+        "command": "npx",
+        "args": ["-y", "cocobase-mcp"],
+        "env": {
+          "COCOBASE_API_KEY": "your-api-key",
+          "COCOBASE_PROJECT_ID": "your-project-id",
+          "COCOBASE_EMAIL": "you@example.com",
+          "COCOBASE_PASSWORD": "your-password"
+        }
+      }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Environment variables
+
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `COCOBASE_API_KEY` | Always | Authenticates all project data operations |
+| `COCOBASE_PROJECT_ID` | Always | Scopes operations to your project |
+| `COCOBASE_EMAIL` | For cloud functions & cron | Dashboard login for cloud function / cron management |
+| `COCOBASE_PASSWORD` | For cloud functions & cron | Dashboard login for cloud function / cron management |
+
+<Note>
+  `COCOBASE_EMAIL` and `COCOBASE_PASSWORD` are only needed for cloud function creation/editing and cron job management. Collection, document, user, email, storage, and analytics tools work with just the API key.
+</Note>
+
+---
+
+## Available Tools
+
+### Project
+
+| Tool | Description |
+|------|-------------|
+| `get_project_config` | Get CORS origins, callback URL, feature flags |
+| `update_project_config` | Update project name, allowed origins, callback URL |
+| `update_feature_config` | Toggle features: `email_verification`, `two_factor_auth`, `phone_auth`, etc. |
+
+### Collections & Documents
+
+| Tool | Description |
+|------|-------------|
+| `list_collections` | List all collections |
+| `create_collection` | Create a new collection |
+| `delete_collection` | Delete a collection and all its documents |
+| `get_collection_schema` | Infer field types from existing documents |
+| `query_documents` | Query with filters, sort, pagination, full-text search |
+| `get_document` | Get one document by ID |
+| `create_document` | Insert a new document |
+| `update_document` | Update fields on an existing document |
+| `delete_document` | Delete one document |
+| `bulk_create_documents` | Insert multiple documents at once |
+| `aggregate_documents` | Run sum/avg/min/max/count on a numeric field |
+| `count_documents` | Count documents, optionally filtered |
+| `export_collection` | Export all documents as JSON or CSV |
+
+### App Users
+
+| Tool | Description |
+|------|-------------|
+| `list_app_users` | List users with search and pagination |
+| `get_app_user` | Get one user by ID |
+| `create_app_user` | Create a new app user |
+| `update_app_user` | Update email, password, or custom data |
+| `delete_app_user` | Delete a user |
+| `add_user_roles` | Set roles on a user |
+| `bulk_delete_users` | Delete multiple users |
+| `reset_user_password` | Trigger password reset for a user |
+
+### Cloud Functions
+
+| Tool | Description |
+|------|-------------|
+| `list_cloud_functions` | List all functions |
+| `get_cloud_function` | Get code + details of a function by name or ID |
+| `create_cloud_function` | Create a new function |
+| `update_cloud_function` | Edit code or description |
+| `delete_cloud_function` | Delete a function |
+| `test_cloud_function` | Execute code with a test payload (no save needed) |
+| `generate_function_with_ai` | Generate Python code from plain-English prompt |
+| `create_function_from_ai` | Generate code with AI and immediately create the function |
+
+### Cron Jobs
+
+| Tool | Description |
+|------|-------------|
+| `list_cron_jobs` | List all scheduled jobs |
+| `create_cron_job` | Create a job with a cron expression and payload |
+| `update_cron_job` | Update schedule, payload, or active state |
+| `delete_cron_job` | Remove a cron job |
+| `toggle_cron_job` | Enable or disable a job |
+| `trigger_cron_job_now` | Run a job immediately (one-time) |
+
+### Storage
+
+| Tool | Description |
+|------|-------------|
+| `list_files` | List stored files, filter by directory |
+| `get_storage_info` | Storage usage vs plan limit |
+| `delete_file` | Delete a file by URL or path |
+
+### Email
+
+| Tool | Description |
+|------|-------------|
+| `send_email` | Send an email via configured provider |
+| `list_email_templates` | List saved templates |
+| `create_email_template` | Create a template with `{{variable}}` placeholders |
+| `update_email_template` | Edit an existing template |
+| `delete_email_template` | Remove a template |
+| `get_email_logs` | View sent email history and delivery status |
+
+### Analytics
+
+| Tool | Description |
+|------|-------------|
+| `get_analytics_overview` | Total collections, documents, users, storage, function executions |
+| `get_user_growth` | Signup trends over time (up to 365 days) |
+| `get_document_activity` | Document create/update activity over time |
+| `get_function_stats` | Cloud function calls, errors, avg execution time |
+| `get_plan_usage` | Current usage vs plan limits |
+| `get_subscription_status` | Current plan, trial status, days remaining |
+
+### Migrations
+
+| Tool | Description |
+|------|-------------|
+| `list_migrations` | List all schema migrations |
+| `create_migration` | Write a new migration |
+| `run_migration` | Execute a pending migration |
+
+---
+
+## Example Conversations
+
+**Set up a project from scratch:**
+
+> "Create a `posts` collection, a `comments` collection, and add these 5 sample posts to get me started."
+
+**Debug and iterate on a cloud function:**
+
+> "Show me the code for my `send-weekly-report` function. It's not sending emails correctly — the template name is wrong. Fix it and test it with payload `{'week': '2025-W21'}`."
+
+**Data operations:**
+
+> "Give me all users who signed up in the last 7 days and export them as CSV."
+
+**Schedule automation:**
+
+> "Create a cron job that runs `cleanup-expired-sessions` every night at 2 AM UTC."
+
+**Monitor your project:**
+
+> "Show me analytics for the last 30 days — how many new users, what's my storage usage, and how many function calls did I make?"
+
+---
+
+## Claude Skill — Cloud Functions AI
+
+The **Claude Skill** gives Claude full knowledge of the CocoBase cloud functions Python environment so it can write, review, and fix your function code accurately.
+
+<Note>
+  The MCP server is better than the Claude Skill for managing cloud functions (creating, updating, testing). The Claude Skill is best used for **writing and understanding function code** — it has deep knowledge of every available global, filter operator, and pattern.
+</Note>
+
+### How to use the Claude Skill
+
+The CocoBase cloud functions system prompt is at:
+
+```
+/home/patrick/Documents/COCOBASE/cocobase-mcp/CLOUD_FUNCTIONS_SYSTEM_PROMPT.md
+```
+
+Paste it as a custom system prompt in Claude, ChatGPT, Cursor, or any AI tool that supports custom instructions.
+
+### What the Claude Skill knows
+
+- Every global variable available in functions (`db`, `asyncdb`, `req`, `email`, `http`, `auth`, `render`, `queue`, `use`)
+- Every `db` method with correct signatures: `get_documents`, `find_one`, `create_document`, `update_document`, `update_document_fields`, `delete_document`, `count_documents`, `bulk_create_documents`, `bulk_delete_documents`, `query`, `get_or_create_document`
+- All filter operators (`__gt`, `__gte`, `__lt`, `__lte`, `__ne`, `__contains`, `__startswith`, `__endswith`, `__in`, `__notin`, `__isnull`, `[or]`, `[or:group]`)
+- `asyncdb` — async proxy of all `db` methods, use with `await` in `async def main()`
+- Email methods and their exact signatures (`send_email`, `send_welcome_email`, `send_password_reset_email`, `send_2fa_code_email`, `send_password_changed_email`)
+- `http.get/post/put/patch/delete/fetch_all` — concurrent external requests
+- `auth.generate_token / validate_token / refresh_token`
+- `queue.add / call_function / has_capacity`
+- `render.render_html / render_template / render_string`
+- `use(function_name, export_name)` for cross-function imports
+- Pre-imported stdlib: `json`, `datetime`, `timedelta`, `math`, `re`, `random`, `secrets`, `uuid`, `base64`, `hashlib`, `urllib`, `collections`, `itertools`, `decimal`, `html`, etc.
+- Security restrictions: no `import`, no file system, no `os/subprocess`, SSRF-blocked HTTP
+
+### Cloud function structure
+
+```python
+# Every function must define main() — sync or async
+def main():
+    return {"success": True}
+
+async def main():
+    user = await asyncdb.find_one("users", email=req.get("email"))
+    return {"user": user}
+```
+
+### Key `db` methods
+
+```python
+# Query — returns {data, total, has_more}
+result = db.get_documents("posts", filters={"status": "active"}, limit=20)
+posts = result["data"]
+
+# One document — returns dict or None
+post = db.find_one("posts", id="abc123")
+
+# Create
+doc = db.create_document("posts", {"title": "Hello", "status": "draft"})
+
+# Partial update (safe — preserves other fields)
+doc = db.update_document("posts", document_id="abc123", updates={"status": "published"})
+
+# Count
+total = db.count_documents("posts", filters={"status": "active"})
+
+# Bulk
+result = db.bulk_create_documents("posts", [{"title": "A"}, {"title": "B"}])
+result = db.bulk_delete_documents("posts", document_ids=["id1", "id2"])
+```
+
+### Async version (`asyncdb`)
+
+In `async def main()`, replace `db.` with `await asyncdb.`:
+
+```python
+async def main():
+    posts = await asyncdb.get_documents("posts", filters={"status": "published"})
+    doc = await asyncdb.create_document("posts", {"title": req.get("title")})
+    return {"created": doc["id"]}
+```
+
+---
+
+## Next Steps
+
+- [JavaScript SDK](/sdk-reference/javascript)
+- [Flutter SDK](/sdk-reference/flutter)
+- [Cloud Functions guide](/cloud-functions/introduction)

@@ -43,7 +43,7 @@ GET /auth/oauth/{provider}
 ### Example
 
 ```bash
-curl "https://api.cocobase.buzz/auth/oauth/google?redirect_uri=https://myapp.com/callback" \
+curl "https://api.cocobase.cc/auth/oauth/google?redirect_uri=https://myapp.com/callback" \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
@@ -92,7 +92,7 @@ GET /auth/oauth/{provider}/callback
 // Step 1: Redirect to OAuth
 async function loginWithGoogle() {
   const response = await fetch(
-    "https://api.cocobase.buzz/auth/oauth/google?redirect_uri=" +
+    "https://api.cocobase.cc/auth/oauth/google?redirect_uri=" +
     encodeURIComponent(window.location.origin + "/callback"),
     {
       headers: {
@@ -111,7 +111,7 @@ async function handleCallback() {
   const code = urlParams.get("code");
 
   const response = await fetch(
-    `https://api.cocobase.buzz/auth/oauth/google/callback?code=${code}`,
+    `https://api.cocobase.cc/auth/oauth/google/callback?code=${code}`,
     {
       headers: {
         Authorization: "Bearer YOUR_API_KEY",
@@ -130,7 +130,7 @@ async function handleCallback() {
 ```javascript
 async function loginWithGitHub() {
   const response = await fetch(
-    "https://api.cocobase.buzz/auth/oauth/github?redirect_uri=" +
+    "https://api.cocobase.cc/auth/oauth/github?redirect_uri=" +
     encodeURIComponent(window.location.origin + "/callback"),
     {
       headers: {
@@ -156,7 +156,7 @@ API_KEY = "YOUR_API_KEY"
 @app.route("/login/google")
 def login_google():
     response = requests.get(
-        "https://api.cocobase.buzz/auth/oauth/google",
+        "https://api.cocobase.cc/auth/oauth/google",
         headers={"Authorization": f"Bearer {API_KEY}"},
         params={"redirect_uri": "http://localhost:5000/callback"},
     )
@@ -168,7 +168,7 @@ def callback():
     code = request.args.get("code")
 
     response = requests.get(
-        "https://api.cocobase.buzz/auth/oauth/google/callback",
+        "https://api.cocobase.cc/auth/oauth/google/callback",
         headers={"Authorization": f"Bearer {API_KEY}"},
         params={"code": code},
     )

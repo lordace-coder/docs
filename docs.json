@@ -16,7 +16,7 @@
     "primary": {
       "type": "button",
       "label": "Dashboard",
-      "href": "https://cocobase.buzz/dashboard"
+      "href": "https://app.cocobase.cc"
     }
   },
   "navigation": {
@@ -63,8 +63,9 @@
             "group": "SDK Reference",
             "pages": [
               "sdk-reference/javascript",
-              "sdk-reference/python",
               "sdk-reference/flutter",
+              "sdk-reference/mcp",
+              "sdk-reference/python",
               "sdk-reference/golang"
             ]
           },
@@ -100,22 +101,6 @@
             "group": "Complete Applications",
             "pages": [
               "examples/complete-apps"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "Multiplayer",
-        "groups": [
-          {
-            "group": "Game Multiplayer",
-            "pages": [
-              "multiplayer/overview",
-              "multiplayer/quickstart",
-              "multiplayer/game-loop",
-              "multiplayer/examples",
-              "multiplayer/best-practices",
-              "multiplayer/api-reference"
             ]
           }
         ]

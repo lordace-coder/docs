@@ -180,7 +180,7 @@ func main() {
 import requests
 
 API_KEY = 'your-api-key'
-BASE_URL = 'https://api.cocobase.buzz'
+BASE_URL = 'https://api.cocobase.cc'
 headers = {'X-API-Key': API_KEY, 'Content-Type': 'application/json'}
 
 # User signs up with referral
@@ -229,7 +229,7 @@ requests.patch(
 <Tab title="HTTP">
 ```bash
 # User signs up with referral
-curl -X POST https://api.cocobase.buzz/auth-collections/signup \
+curl -X POST https://api.cocobase.cc/auth-collections/signup \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -242,7 +242,7 @@ curl -X POST https://api.cocobase.buzz/auth-collections/signup \
   }'
 
 # Follow a user (update following list)
-curl -X PATCH https://api.cocobase.buzz/auth-collections/user \
+curl -X PATCH https://api.cocobase.cc/auth-collections/user \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -337,7 +337,7 @@ requests.patch(
 <Tab title="HTTP">
 ```bash
 # User bookmarks a post
-curl -X PATCH https://api.cocobase.buzz/auth-collections/user \
+curl -X PATCH https://api.cocobase.cc/auth-collections/user \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -448,7 +448,7 @@ requests.post(
 <Tab title="HTTP">
 ```bash
 # Create a post
-curl -X POST https://api.cocobase.buzz/collections/posts/documents \
+curl -X POST https://api.cocobase.cc/collections/posts/documents \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -458,7 +458,7 @@ curl -X POST https://api.cocobase.buzz/collections/posts/documents \
   }'
 
 # Create a comment (using post ID from response)
-curl -X POST https://api.cocobase.buzz/collections/comments/documents \
+curl -X POST https://api.cocobase.cc/collections/comments/documents \
   -H "X-API-Key: your-api-key" \
   -H "Content-Type: application/json" \
   -d '{
@@ -545,11 +545,11 @@ print(users_with_referrer['data'][0]['data']['referred_by'])
 <Tab title="HTTP">
 ```bash
 # Without population (just IDs)
-curl "https://api.cocobase.buzz/auth-collections/users" \
+curl "https://api.cocobase.cc/auth-collections/users" \
   -H "X-API-Key: your-api-key"
 
 # With population (full data)
-curl "https://api.cocobase.buzz/auth-collections/users?populate=referred_by" \
+curl "https://api.cocobase.cc/auth-collections/users?populate=referred_by" \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>
@@ -610,7 +610,7 @@ print(users['data'][0]['data']['followers_ids'])  # Array of full user objects
 <Tab title="HTTP">
 ```bash
 # Populate multiple fields
-curl "https://api.cocobase.buzz/auth-collections/users?populate=referred_by&populate=followers_ids&populate=following_ids" \
+curl "https://api.cocobase.cc/auth-collections/users?populate=referred_by&populate=followers_ids&populate=following_ids" \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>
@@ -680,11 +680,11 @@ projects = requests.get(
 <Tab title="HTTP">
 ```bash
 # Force fetch from AppUser model
-curl "https://api.cocobase.buzz/collections/posts/documents?populate=author:appuser" \
+curl "https://api.cocobase.cc/collections/posts/documents?populate=author:appuser" \
   -H "X-API-Key: your-api-key"
 
 # Force fetch from specific collection
-curl "https://api.cocobase.buzz/collections/projects/documents?populate=owner:team_members" \
+curl "https://api.cocobase.cc/collections/projects/documents?populate=owner:team_members" \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>
@@ -976,11 +976,11 @@ followers = follow_system.get_followers('user_123')
 ```bash
 # Follow a user
 # First, get current user
-curl https://api.cocobase.buzz/auth-collections/user \
+curl https://api.cocobase.cc/auth-collections/user \
   -H "Authorization: Bearer YOUR_TOKEN"
 
 # Update following list (add new user)
-curl -X PATCH https://api.cocobase.buzz/auth-collections/user \
+curl -X PATCH https://api.cocobase.cc/auth-collections/user \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -990,7 +990,7 @@ curl -X PATCH https://api.cocobase.buzz/auth-collections/user \
   }'
 
 # Get user with populated followers
-curl "https://api.cocobase.buzz/auth-collections/users/user_123?populate=followers_ids" \
+curl "https://api.cocobase.cc/auth-collections/users/user_123?populate=followers_ids" \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>
@@ -1130,11 +1130,11 @@ print(f"Total referrals: {stats['referralCount']}")
 <Tab title="HTTP">
 ```bash
 # Get user who referred this user
-curl "https://api.cocobase.buzz/auth-collections/users/user_123?populate=referred_by" \
+curl "https://api.cocobase.cc/auth-collections/users/user_123?populate=referred_by" \
   -H "X-API-Key: your-api-key"
 
 # Get all users this user referred
-curl "https://api.cocobase.buzz/auth-collections/users?data.referred_by=user_123" \
+curl "https://api.cocobase.cc/auth-collections/users?data.referred_by=user_123" \
   -H "X-API-Key: your-api-key"
 ```
 </Tab>

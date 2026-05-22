@@ -17,13 +17,13 @@ Cocobase simplifies third-party authentication by handling the complex OAuth exc
 
 ## Configuration
 
-Before implementing OAuth, you must configure your providers in the [Cocobase Dashboard](https://cocobase.buzz/dashboard):
+Before implementing OAuth, you must configure your providers in the [Cocobase Dashboard](https://cocobase.cc/dashboard):
 
 1. Go to **Settings** > **Authentication** > **OAuth**.
 2. Enable your desired providers.
 3. Enter your **Client ID** and **Client Secret** (obtained from the provider's developer console).
 4. Add the Cocobase redirect URI to your provider's allowed list:
-   `https://api.cocobase.buzz/auth/oauth/{provider}/callback`
+   `https://api.cocobase.cc/auth/oauth/{provider}/callback`
 
 ---
 
@@ -54,13 +54,13 @@ Once the user completes the login, the provider redirects them back to your `red
 
 ```javascript
 // 1. Get the URL
-const res = await fetch('https://api.cocobase.buzz/auth-collections/oauth/google?redirect_uri=http://localhost:3000/callback');
+const res = await fetch('https://api.cocobase.cc/auth-collections/oauth/google?redirect_uri=http://localhost:3000/callback');
 const { url } = await res.json();
 window.location.href = url;
 
 // 2. On your callback page
 const code = new URLSearchParams(window.location.search).get('code');
-const loginRes = await fetch('https://api.cocobase.buzz/auth-collections/verify-google-login', {
+const loginRes = await fetch('https://api.cocobase.cc/auth-collections/verify-google-login', {
   method: 'POST',
   body: JSON.stringify({ code, redirect_uri: 'http://localhost:3000/callback' })
 });
@@ -75,7 +75,7 @@ When using Apple Sign In on iOS, you typically use the native SDK to get an `ide
 // Example using a hybrid framework or native bridge
 const appleCredential = await AppleSignIn.signIn();
 
-const res = await fetch('https://api.cocobase.buzz/auth-collections/verify-apple-login', {
+const res = await fetch('https://api.cocobase.cc/auth-collections/verify-apple-login', {
   method: 'POST',
   body: JSON.stringify({
     identityToken: appleCredential.identityToken,

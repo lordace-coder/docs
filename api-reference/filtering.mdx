@@ -34,28 +34,28 @@ Use operator suffixes on field names to perform advanced comparisons.
 By default, multiple query parameters are combined with **AND** logic.
 ```bash
 # status=active AND role=admin
-curl "https://api.cocobase.buzz/collections/users?status=active&role=admin"
+curl "https://api.cocobase.cc/collections/users?status=active&role=admin"
 ```
 
 ### OR Queries
 Use the `[or]` prefix to create OR conditions.
 ```bash
 # status=published OR featured=true
-curl "https://api.cocobase.buzz/collections/posts?[or]status=published&[or]featured=true"
+curl "https://api.cocobase.cc/collections/posts?[or]status=published&[or]featured=true"
 ```
 
 ### Named OR Groups
 Group multiple OR conditions together. Groups are ANDed with other filters.
 ```bash
 # category=tech AND (tag=python OR tag=go)
-curl "https://api.cocobase.buzz/collections/posts?category=tech&[or:tags]tag=python&[or:tags]tag=go"
+curl "https://api.cocobase.cc/collections/posts?category=tech&[or:tags]tag=python&[or:tags]tag=go"
 ```
 
 ### Multi-field Search
 Search for a keyword across multiple fields using the `__or__` syntax.
 ```bash
 # Search 'john' in either 'name' OR 'email'
-curl "https://api.cocobase.buzz/collections/users?name__or__email__contains=john"
+curl "https://api.cocobase.cc/collections/users?name__or__email__contains=john"
 ```
 
 ---
@@ -66,14 +66,14 @@ curl "https://api.cocobase.buzz/collections/users?name__or__email__contains=john
 - `orderBy`: The field name to sort by.
 - `order`: Use `asc` (ascending) or `desc` (descending).
 ```bash
-curl "https://api.cocobase.buzz/collections/posts?orderBy=createdAt&order=desc"
+curl "https://api.cocobase.cc/collections/posts?orderBy=createdAt&order=desc"
 ```
 
 ### Pagination
 - `limit`: Number of items to return (default 20, max 100).
 - `offset`: Number of items to skip.
 ```bash
-curl "https://api.cocobase.buzz/collections/posts?limit=10&offset=20"
+curl "https://api.cocobase.cc/collections/posts?limit=10&offset=20"
 ```
 
 ---
@@ -84,18 +84,18 @@ Fetch related documents in a single request using the `populate` parameter.
 
 ### Single Population
 ```bash
-curl "https://api.cocobase.buzz/collections/posts?populate=author"
+curl "https://api.cocobase.cc/collections/posts?populate=author"
 ```
 
 ### Nested Population
 ```bash
-curl "https://api.cocobase.buzz/collections/posts?populate=author.company.location"
+curl "https://api.cocobase.cc/collections/posts?populate=author.company.location"
 ```
 
 ### Filtering by Related Fields
 ```bash
 # Get posts where author's role is admin
-curl "https://api.cocobase.buzz/collections/posts?author.role=admin&populate=author"
+curl "https://api.cocobase.cc/collections/posts?author.role=admin&populate=author"
 ```
 
 ---
@@ -115,7 +115,7 @@ const params = new URLSearchParams({
   populate: 'brand'
 });
 
-const res = await fetch(`https://api.cocobase.buzz/collections/products?${params}`);
+const res = await fetch(`https://api.cocobase.cc/collections/products?${params}`);
 ```
 
 ### User Search
@@ -126,5 +126,5 @@ params = {
     '[or:search]name__contains': 'alice',
     '[or:search]bio__contains': 'alice'
 }
-res = requests.get('https://api.cocobase.buzz/collections/users', params=params)
+res = requests.get('https://api.cocobase.cc/collections/users', params=params)
 ```

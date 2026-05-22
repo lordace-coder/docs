@@ -38,7 +38,7 @@ Create a new record in a specific collection.
 - **Endpoint**: `POST /collections/{collection}`
 - **Example**:
 ```bash
-curl -X POST https://api.cocobase.buzz/collections/posts \
+curl -X POST https://api.cocobase.cc/collections/posts \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -105,19 +105,19 @@ Filter documents using field operators:
 <Tab title="JavaScript">
 ```javascript
 // Create
-const res = await fetch('https://api.cocobase.buzz/collections/posts', {
+const res = await fetch('https://api.cocobase.cc/collections/posts', {
   method: 'POST',
   headers: { 'Authorization': 'Bearer YOUR_KEY' },
   body: JSON.stringify({ title: 'New Post' })
 });
 
 // List with Filter
-const users = await fetch('https://api.cocobase.buzz/collections/users?role=admin');
+const users = await fetch('https://api.cocobase.cc/collections/users?role=admin');
 ```
 </Tab>
 <Tab title="cURL">
 ```bash
-curl https://api.cocobase.buzz/collections/posts?limit=10 \
+curl https://api.cocobase.cc/collections/posts?limit=10 \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 </Tab>
