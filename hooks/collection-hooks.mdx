@@ -1,0 +1,228 @@
+---
+title: "Collection Hooks"
+description: "Run cloud functions when documents are created, updated, or deleted"
+icon: "database"
+---
+
+# Collection Hooks
+
+Collection hooks fire when documents in a specific collection change. Attach them per-collection through the Dashboard.
+
+---
+
+## Events
+
+### `pre_save`
+
+Fires **before** a document is created or updated. Runs in the background (does not block the write).
+
+Use it to: enrich data before saving, send a notification that something is about to be written, log an audit event.
+
+**Payload:**
+
+```python
+req.payload = {
+  "event": "pre_save",
+  "collection": "posts",
+  "operation": "create",          # "create" or "update"
+  "document": {                   # the data being saved
+    "title": "Hello World",
+    "status": "draft"
+  },
+  "old_data": { ... }             # only present on "update" — the previous data
+}
+```
+
+**Example — log all creates to an external audit service:**
+
+```python
+def main():
+    op = req.payload.get("operation")
+    doc = req.payload.get("document", {})
+    collection = req.payload.get("collection")
+
+    if op == "create":
+        http.post("https://audit.myapp.com/events", json={
+            "action": "document_created",
+            "collection": collection,
+            "data": doc,
+        })
+
+    return {"ok": True}
+```
+
+---
+
+### `post_save`
+
+Fires **after** a document is successfully created or updated. Runs in the background.
+
+Use it to: send notifications, update a search index, trigger downstream workflows.
+
+**Payload:**
+
+```python
+req.payload = {
+  "event": "post_save",
+  "collection": "posts",
+  "operation": "create",          # "create" or "update"
+  "document": {                   # the final saved data
+    "title": "Hello World",
+    "status": "published"
+  },
+  "document_id": "doc-uuid",
+  "old_data": { ... }             # only present on "update"
+}
+```
+
+**Example — send a push notification when a post is published:**
+
+```python
+def main():
+    doc = req.payload.get("document", {})
+    old = req.payload.get("old_data", {})
+
+    # Only notify when status changes to published
+    if doc.get("status") == "published" and old.get("status") != "published":
+        author_id = doc.get("author_id")
+        author = db.get_app_user(author_id) if author_id else None
+
+        if author and author.get("fcm_token"):
+            http.post("https://fcm.googleapis.com/v1/messages", json={
+                "token": author["fcm_token"],
+                "notification": {
+                    "title": "Post published!",
+                    "body": doc.get("title"),
+                }
+            })
+
+    return {"ok": True}
+```
+
+---
+
+### `pre_delete`
+
+Fires **before** a document is deleted. Runs in the background.
+
+Use it to: archive data elsewhere before it's gone, clean up related records, send a warning notification.
+
+**Payload:**
+
+```python
+req.payload = {
+  "event": "pre_delete",
+  "collection": "posts",
+  "document_id": "doc-uuid",
+  "document": {                   # snapshot of the document about to be deleted
+    "title": "Hello World",
+    "author_id": "user-123"
+  }
+}
+```
+
+**Example — archive to a separate collection before deleting:**
+
+```python
+def main():
+    doc = req.payload.get("document", {})
+    doc_id = req.payload.get("document_id")
+
+    db.create_document("deleted_posts", {
+        "original_id": doc_id,
+        "data": doc,
+        "deleted_at": datetime.utcnow().isoformat(),
+    })
+
+    return {"ok": True}
+```
+
+---
+
+### `post_delete`
+
+Fires **after** a document has been deleted. Runs in the background.
+
+Use it to: clean up dependent data, update counters, remove from search index.
+
+**Payload:**
+
+```python
+req.payload = {
+  "event": "post_delete",
+  "collection": "posts",
+  "document_id": "doc-uuid",
+  "document": {                   # snapshot of the deleted document
+    "title": "Hello World",
+    "author_id": "user-123"
+  }
+}
+```
+
+**Example — decrement an author's post count:**
+
+```python
+def main():
+    doc = req.payload.get("document", {})
+    author_id = doc.get("author_id")
+
+    if author_id:
+        author = db.get_app_user(author_id)
+        if author:
+            current_count = author.get("data", {}).get("post_count", 0)
+            db.update_app_user(author_id, data={
+                "post_count": max(0, current_count - 1)
+            })
+
+    return {"ok": True}
+```
+
+---
+
+## Handling Both `pre_save` Operations
+
+If one function handles both create and update, check `operation`:
+
+```python
+def main():
+    op = req.payload.get("operation")    # "create" or "update"
+    doc = req.payload.get("document", {})
+    old = req.payload.get("old_data", {})
+
+    if op == "create":
+        # New document logic
+        pass
+    elif op == "update":
+        # Changed fields
+        changed = {
+            k: v for k, v in doc.items()
+            if old.get(k) != v
+        }
+        pass
+
+    return {"ok": True}
+```
+
+---
+
+## Rules vs Hooks
+
+Collection hooks are different from collection **rules**:
+
+| | Rules | Hooks |
+|--|-------|-------|
+| Purpose | Allow/deny access | Run side-effects |
+| Where | Dashboard → Collection → Rules | Dashboard → Collection → Settings |
+| Blocking | ✅ Yes — denies the request | ❌ No — background only |
+| Receives data | No | ✅ Full document payload |
+
+Use **rules** to gate who can write. Use **hooks** to react to what was written.
+
+---
+
+## Limits & Behaviour
+
+- Hooks run in **background threads** — they never add latency to your API response.
+- If a hook function fails or times out (15 second limit), the error is logged but the document operation is **not** rolled back.
+- You can attach **multiple hooks** to the same event on the same collection — all of them fire.
+- Hooks only fire on operations made through the **Cocobase API/SDK**, not direct DB writes.

@@ -1,0 +1,485 @@
+---
+title: "Auth Hooks"
+description: "Run cloud functions during user registration, login, and profile changes"
+icon: "user-shield"
+---
+
+# Auth Hooks
+
+Auth hooks fire during your app-user authentication lifecycle — registration, login, profile updates, and deletions. Configure them in **Dashboard → App Users → Auth Hooks**.
+
+<Note>
+  `pre_login` and `pre_register` are **blocking** — your function can reject the operation by returning `{"block": true, "reason": "..."}`. All other auth hooks are fire-and-forget (background).
+</Note>
+
+---
+
+## Events
+
+### `pre_register`
+
+Fires **before** a new user is saved to the database. **Blocking** — can reject registration.
+
+Use it to: enforce invite-only signups, validate email domain, check against a blocklist, enforce registration quotas.
+
+**Payload:**
+
+```python
+req.payload = {
+  "event": "pre_register",
+  "email": "user@example.com",
+  "data": {                       # all fields submitted during registration
+    "email": "user@example.com",
+    "name": "Jane Doe",
+    "role": "user",
+    # any custom fields passed in the signup request
+  }
+}
+```
+
+**To block registration**, return:
+```python
+return {"block": True, "reason": "Your message to the user."}
+```
+
+**To allow it**, return anything else (or nothing):
+```python
+return {"block": False}
+```
+
+**Example — invite-only: only allow pre-approved emails:**
+
+```python
+def main():
+    email = req.payload.get("email", "")
+
+    # Check if email is in the approved invites collection
+    invite = db.find_one("invites", email=email, used=False)
+    if not invite:
+        return {
+            "block": True,
+            "reason": "This is an invite-only app. Request access at myapp.com/waitlist."
+        }
+
+    # Mark invite as used
+    db.update_document("invites", invite["id"], {"used": True})
+    return {"block": False}
+```
+
+**Example — block disposable email domains:**
+
+```python
+BLOCKED_DOMAINS = ["mailinator.com", "tempmail.com", "guerrillamail.com"]
+
+def main():
+    email = req.payload.get("email", "")
+    domain = email.split("@")[-1].lower() if "@" in email else ""
+
+    if domain in BLOCKED_DOMAINS:
+        return {"block": True, "reason": "Disposable email addresses are not allowed."}
+
+    return {"block": False}
+```
+
+---
+
+### `post_register`
+
+Fires **after** a user is successfully registered. Runs in the background.
+
+Use it to: send a welcome email, create default records for the user, notify an admin, add the user to a mailing list.
+
+**Payload:**
+
+```python
+req.payload = {
+  "event": "post_register",
+  "user": {
+    "id": "user-uuid",
+    "email": "user@example.com",
+    "data": {                     # all custom fields stored on the user
+      "name": "Jane Doe",
+      "role": "user"
+    }
+  }
+}
+```
+
+**Example — create a default profile record on signup:**
+
+```python
+def main():
+    user = req.payload.get("user", {})
+
+    db.create_document("profiles", {
+        "user_id": user["id"],
+        "email": user["email"],
+        "display_name": user.get("data", {}).get("name", ""),
+        "avatar_url": None,
+        "bio": "",
+        "created_at": datetime.utcnow().isoformat(),
+    })
+
+    return {"ok": True}
+```
+
+**Example — send a Slack notification to your team on new signup:**
+
+```python
+def main():
+    user = req.payload.get("user", {})
+    slack_url = config.get("SLACK_WEBHOOK_URL")
+
+    http.post(slack_url, json={
+        "text": f"🎉 New user signed up: {user['email']}"
+    })
+
+    return {"ok": True}
+```
+
+---
+
+### `pre_login`
+
+Fires **after** the user's password is verified but **before** the JWT token is issued (and before 2FA). **Blocking** — can deny login.
+
+Use it to: block suspended/banned accounts, enforce geo/IP restrictions, require additional conditions, audit login attempts.
+
+**Payload:**
+
+```python
+req.payload = {
+  "event": "pre_login",
+  "user": {
+    "id": "user-uuid",
+    "email": "user@example.com",
+    "data": {                     # all custom fields stored on the user
+      "is_banned": False,
+      "subscription_status": "active",
+      "allowed_ips": ["192.168.1.1"]
+    }
+  }
+}
+```
+
+**To block login**, return:
+```python
+return {"block": True, "reason": "Your message to the user."}
+```
+
+**To allow it**, return anything else:
+```python
+return {"block": False}
+```
+
+<Warning>
+  **Fail-open:** If your cloud function times out (10 second limit), crashes, or is unreachable, login proceeds normally. A broken hook will never lock users out of your app.
+</Warning>
+
+**Example — block banned users:**
+
+```python
+def main():
+    user = req.payload.get("user", {})
+    data = user.get("data", {})
+
+    if data.get("is_banned"):
+        reason = data.get("ban_reason", "Your account has been suspended.")
+        return {"block": True, "reason": reason}
+
+    return {"block": False}
+```
+
+**Example — block users with expired subscriptions:**
+
+```python
+def main():
+    user = req.payload.get("user", {})
+    data = user.get("data", {})
+
+    if data.get("subscription_status") == "expired":
+        return {
+            "block": True,
+            "reason": "Your subscription has expired. Renew at myapp.com/billing."
+        }
+
+    return {"block": False}
+```
+
+**Example — enforce company email domain after login:**
+
+```python
+ALLOWED_DOMAIN = "mycompany.com"
+
+def main():
+    user = req.payload.get("user", {})
+    email = user.get("email", "")
+
+    if not email.endswith(f"@{ALLOWED_DOMAIN}"):
+        return {
+            "block": True,
+            "reason": f"Only @{ALLOWED_DOMAIN} accounts can log in."
+        }
+
+    return {"block": False}
+```
+
+**Example — log login to external analytics (allow always):**
+
+```python
+def main():
+    user = req.payload.get("user", {})
+
+    # Fire-and-forget to analytics (don't let this block login)
+    try:
+        http.post("https://analytics.myapp.com/events", json={
+            "event": "login",
+            "user_id": user["id"],
+            "email": user["email"],
+            "timestamp": datetime.utcnow().isoformat(),
+        })
+    except:
+        pass  # never block login due to analytics failure
+
+    return {"block": False}
+```
+
+---
+
+### `post_login`
+
+Fires **after** a user logs in and receives their token. Runs in the background.
+
+Use it to: update `last_login_at`, track login streaks, send a security notification email, refresh cached user data.
+
+**Payload:**
+
+```python
+req.payload = {
+  "event": "post_login",
+  "user": {
+    "id": "user-uuid",
+    "email": "user@example.com",
+    "data": {
+      "last_login_at": "2024-01-15T10:30:00Z",
+      "login_count": 42
+    }
+  }
+}
+```
+
+**Example — update last login timestamp and increment counter:**
+
+```python
+def main():
+    user = req.payload.get("user", {})
+    user_id = user.get("id")
+    data = user.get("data", {})
+
+    db.update_app_user(user_id, data={
+        "last_login_at": datetime.utcnow().isoformat(),
+        "login_count": (data.get("login_count") or 0) + 1,
+    })
+
+    return {"ok": True}
+```
+
+---
+
+### `pre_user_update`
+
+Fires **before** a user's profile is updated. Runs in the background.
+
+**Payload:**
+
+```python
+req.payload = {
+  "event": "pre_user_update",
+  "user": {
+    "id": "user-uuid",
+    "email": "user@example.com",
+    "data": {                     # the NEW data (after the update is applied)
+      "name": "Jane Smith",
+      "role": "admin"
+    }
+  }
+}
+```
+
+**Example — log profile changes to an audit trail:**
+
+```python
+def main():
+    user = req.payload.get("user", {})
+
+    db.create_document("audit_log", {
+        "action": "user_update",
+        "user_id": user["id"],
+        "new_data": user.get("data"),
+        "timestamp": datetime.utcnow().isoformat(),
+    })
+
+    return {"ok": True}
+```
+
+---
+
+### `post_user_update`
+
+Fires **after** a user's profile is successfully updated. Runs in the background.
+
+**Payload:**
+
+```python
+req.payload = {
+  "event": "post_user_update",
+  "user": {
+    "id": "user-uuid",
+    "email": "user@example.com",
+    "data": {                     # the final saved data
+      "name": "Jane Smith",
+      "role": "admin"
+    }
+  }
+}
+```
+
+**Example — sync updated name to a profiles collection:**
+
+```python
+def main():
+    user = req.payload.get("user", {})
+    user_id = user["id"]
+    new_name = user.get("data", {}).get("name")
+
+    if new_name:
+        profile = db.find_one("profiles", user_id=user_id)
+        if profile:
+            db.update_document("profiles", profile["id"], {
+                "display_name": new_name
+            })
+
+    return {"ok": True}
+```
+
+---
+
+### `pre_user_delete`
+
+Fires **before** a user is deleted. Runs in the background.
+
+Use it to: archive the user's data, clean up associated records, cancel subscriptions, send a goodbye email.
+
+**Payload:**
+
+```python
+req.payload = {
+  "event": "pre_user_delete",
+  "user": {
+    "id": "user-uuid",
+    "email": "user@example.com",
+    "data": {                     # full user data snapshot before deletion
+      "name": "Jane Doe",
+      "plan": "pro"
+    }
+  }
+}
+```
+
+**Example — archive user data before deletion:**
+
+```python
+def main():
+    user = req.payload.get("user", {})
+
+    db.create_document("deleted_users", {
+        "original_id": user["id"],
+        "email": user["email"],
+        "data": user.get("data"),
+        "deleted_at": datetime.utcnow().isoformat(),
+    })
+
+    return {"ok": True}
+```
+
+---
+
+### `post_user_delete`
+
+Fires **after** a user is successfully deleted. Runs in the background.
+
+Use it to: clean up remaining references, update statistics, notify downstream services.
+
+**Payload:**
+
+```python
+req.payload = {
+  "event": "post_user_delete",
+  "user": {
+    "id": "user-uuid",           # the ID of the now-deleted user
+    "email": "user@example.com",
+    "data": {                    # the data snapshot at time of deletion
+      "name": "Jane Doe"
+    }
+  }
+}
+```
+
+**Example — delete all posts authored by the deleted user:**
+
+```python
+def main():
+    user = req.payload.get("user", {})
+    user_id = user.get("id")
+
+    posts = db.query("posts", author_id=user_id, limit=1000)
+    for post in posts.get("data", []):
+        db.delete_document("posts", post["id"])
+
+    return {"ok": True}
+```
+
+---
+
+## Checking the Event Inside One Function
+
+If you want one cloud function to handle multiple auth events:
+
+```python
+def main():
+    event = req.payload.get("event")
+    user = req.payload.get("user", {})
+
+    if event == "pre_login":
+        if user.get("data", {}).get("is_banned"):
+            return {"block": True, "reason": "Account suspended."}
+        return {"block": False}
+
+    elif event == "post_login":
+        db.update_app_user(user["id"], data={
+            "last_login_at": datetime.utcnow().isoformat()
+        })
+
+    elif event == "post_register":
+        db.create_document("profiles", {
+            "user_id": user["id"],
+            "email": user["email"],
+        })
+
+    return {"ok": True}
+```
+
+---
+
+## Summary Table
+
+| Event | Blocking | When it fires |
+|-------|----------|---------------|
+| `pre_register` | ✅ Yes | Before user is created |
+| `post_register` | No | After user is created |
+| `pre_login` | ✅ Yes | After password check, before token |
+| `post_login` | No | After token is issued |
+| `pre_user_update` | No | Before profile is saved |
+| `post_user_update` | No | After profile is saved |
+| `pre_user_delete` | No | Before user is removed |
+| `post_user_delete` | No | After user is removed |

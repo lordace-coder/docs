@@ -1,0 +1,400 @@
+---
+title: "Hook Examples"
+description: "Copy-paste recipes for common hook use cases"
+icon: "code"
+---
+
+# Hook Examples
+
+Ready-to-use cloud function recipes for the most common hook patterns.
+
+---
+
+## Auth Hooks
+
+### Invite-Only Registration
+
+Only users with a valid invite code in their signup data can register.
+
+**Hook:** `pre_register`
+
+```python
+def main():
+    data = req.payload.get("data", {})
+    invite_code = data.get("invite_code", "")
+
+    if not invite_code:
+        return {"block": True, "reason": "An invite code is required to sign up."}
+
+    # Look up code in invites collection
+    invite = db.find_one("invites",
+        code=invite_code,
+        used=False
+    )
+
+    if not invite:
+        return {"block": True, "reason": "Invalid or expired invite code."}
+
+    # Mark invite as used so it can't be reused
+    db.update_document("invites", invite["id"], {"used": True})
+    return {"block": False}
+```
+
+---
+
+### Block Disposable Emails
+
+Reject signups from known throwaway email services.
+
+**Hook:** `pre_register`
+
+```python
+BLOCKED_DOMAINS = [
+    "mailinator.com", "tempmail.com", "guerrillamail.com",
+    "throwam.com", "yopmail.com", "sharklasers.com",
+]
+
+def main():
+    email = req.payload.get("email", "").lower()
+    domain = email.split("@")[-1] if "@" in email else ""
+
+    if domain in BLOCKED_DOMAINS:
+        return {
+            "block": True,
+            "reason": "Disposable email addresses are not allowed. Please use a real email."
+        }
+
+    return {"block": False}
+```
+
+---
+
+### Onboarding: Create Default Records on Signup
+
+Create a profile, default settings, and a welcome notification when a user registers.
+
+**Hook:** `post_register`
+
+```python
+def main():
+    user = req.payload.get("user", {})
+    user_id = user["id"]
+    data = user.get("data", {})
+
+    # Create profile
+    db.create_document("profiles", {
+        "user_id": user_id,
+        "display_name": data.get("name", ""),
+        "avatar_url": None,
+        "bio": "",
+    })
+
+    # Create default settings
+    db.create_document("user_settings", {
+        "user_id": user_id,
+        "email_notifications": True,
+        "theme": "light",
+        "language": "en",
+    })
+
+    # Create welcome notification
+    db.create_document("notifications", {
+        "user_id": user_id,
+        "type": "welcome",
+        "message": f"Welcome to the app{', ' + data['name'] if data.get('name') else ''}! 🎉",
+        "read": False,
+    })
+
+    return {"ok": True}
+```
+
+---
+
+### Suspend / Ban System
+
+Block login for users flagged as banned, with a reason shown to the user.
+
+**Hook:** `pre_login`
+
+```python
+def main():
+    user = req.payload.get("user", {})
+    data = user.get("data", {})
+
+    if data.get("is_banned"):
+        reason = data.get("ban_reason") or "Your account has been suspended. Contact support."
+        return {"block": True, "reason": reason}
+
+    # Optional: also block deactivated accounts
+    if data.get("status") == "deactivated":
+        return {
+            "block": True,
+            "reason": "Your account has been deactivated. Reactivate it at myapp.com/account."
+        }
+
+    return {"block": False}
+```
+
+---
+
+### Track Login Activity
+
+Record every login with timestamp and increment a counter.
+
+**Hook:** `post_login`
+
+```python
+def main():
+    user = req.payload.get("user", {})
+    user_id = user.get("id")
+    data = user.get("data", {})
+
+    # Update login stats on the user record
+    db.update_app_user(user_id, data={
+        "last_login_at": datetime.utcnow().isoformat(),
+        "login_count": (data.get("login_count") or 0) + 1,
+    })
+
+    # Also write to a login history collection for audit purposes
+    db.create_document("login_history", {
+        "user_id": user_id,
+        "email": user.get("email"),
+        "logged_in_at": datetime.utcnow().isoformat(),
+    })
+
+    return {"ok": True}
+```
+
+---
+
+### Notify Team on New Signup (Slack)
+
+Post a Slack message whenever a new user registers.
+
+**Hook:** `post_register`
+
+```python
+def main():
+    user = req.payload.get("user", {})
+    slack_url = config.get("SLACK_WEBHOOK_URL")
+
+    if not slack_url:
+        return {"ok": True}
+
+    name = user.get("data", {}).get("name") or user.get("email")
+    http.post(slack_url, json={
+        "text": f"🎉 New signup: *{name}* (`{user['email']}`)"
+    })
+
+    return {"ok": True}
+```
+
+Store `SLACK_WEBHOOK_URL` in your project's environment config (Dashboard → Settings → Environment).
+
+---
+
+## Collection Hooks
+
+### Auto-Timestamp Every Document
+
+Add `updated_at` to every document automatically on save.
+
+**Hook:** `pre_save`
+
+```python
+def main():
+    doc = req.payload.get("document", {})
+    op = req.payload.get("operation")
+
+    # You can't modify the document from a hook (it's already committed or about to be)
+    # Instead use this to write to a separate audit collection
+    db.create_document("document_history", {
+        "collection": req.payload.get("collection"),
+        "operation": op,
+        "snapshot": doc,
+        "timestamp": datetime.utcnow().isoformat(),
+    })
+
+    return {"ok": True}
+```
+
+> **Note:** Hooks cannot modify the document being saved. To set timestamps automatically, use cloud functions as your write endpoint instead, or handle it on the client side.
+
+---
+
+### Sync to a Search Index
+
+After a document is saved, push it to an external search service (e.g. Algolia, Meilisearch, Typesense).
+
+**Hook:** `post_save`
+
+```python
+def main():
+    doc = req.payload.get("document", {})
+    doc_id = req.payload.get("document_id")
+    op = req.payload.get("operation")
+    collection = req.payload.get("collection")
+
+    if collection != "posts":
+        return {"ok": True}
+
+    # Only index published posts
+    if doc.get("status") != "published":
+        return {"ok": True}
+
+    search_api_key = config.get("TYPESENSE_API_KEY")
+    search_host = config.get("TYPESENSE_HOST")
+
+    http.put(
+        f"{search_host}/collections/posts/documents/{doc_id}",
+        json={
+            "id": doc_id,
+            "title": doc.get("title"),
+            "body": doc.get("body"),
+            "author": doc.get("author"),
+        },
+        headers={"X-TYPESENSE-API-KEY": search_api_key}
+    )
+
+    return {"ok": True}
+```
+
+---
+
+### Remove from Search Index on Delete
+
+**Hook:** `post_delete`
+
+```python
+def main():
+    doc_id = req.payload.get("document_id")
+    collection = req.payload.get("collection")
+
+    if collection != "posts":
+        return {"ok": True}
+
+    search_api_key = config.get("TYPESENSE_API_KEY")
+    search_host = config.get("TYPESENSE_HOST")
+
+    http.delete(
+        f"{search_host}/collections/posts/documents/{doc_id}",
+        headers={"X-TYPESENSE-API-KEY": search_api_key}
+    )
+
+    return {"ok": True}
+```
+
+---
+
+### Archive Deleted Documents
+
+Save a copy before deletion so data is never permanently lost.
+
+**Hook:** `pre_delete`
+
+```python
+def main():
+    doc = req.payload.get("document", {})
+    doc_id = req.payload.get("document_id")
+    collection = req.payload.get("collection")
+
+    db.create_document("archive", {
+        "source_collection": collection,
+        "source_id": doc_id,
+        "data": doc,
+        "archived_at": datetime.utcnow().isoformat(),
+    })
+
+    return {"ok": True}
+```
+
+---
+
+### Notify on Document Change (Email)
+
+Send an email when an order document's status changes.
+
+**Hook:** `post_save`
+
+```python
+def main():
+    doc = req.payload.get("document", {})
+    old = req.payload.get("old_data", {})
+    op = req.payload.get("operation")
+
+    # Only care about updates where status changed
+    if op != "update":
+        return {"ok": True}
+
+    new_status = doc.get("status")
+    old_status = old.get("status")
+
+    if new_status == old_status:
+        return {"ok": True}
+
+    customer_email = doc.get("customer_email")
+    if not customer_email:
+        return {"ok": True}
+
+    email.send(
+        to=customer_email,
+        subject=f"Order #{doc.get('order_number')} is now {new_status}",
+        body=f"""
+Hi there,
+
+Your order #{doc.get('order_number')} status has been updated to: {new_status}.
+
+Track your order at myapp.com/orders/{doc.get('id')}.
+
+Thanks!
+        """.strip()
+    )
+
+    return {"ok": True}
+```
+
+---
+
+## Tips
+
+### Access Project Config in Hooks
+
+Store API keys and secrets in your project's environment config (Dashboard → Settings → Environment), then read them with `config.get()`:
+
+```python
+api_key = config.get("MY_SERVICE_API_KEY")
+```
+
+### Don't Block on External Calls
+
+For `pre_login` and `pre_register` hooks, always wrap external HTTP calls in try/except so a slow or failing external service doesn't block your users:
+
+```python
+def main():
+    try:
+        result = http.post("https://external.service.com/check", json={...})
+        if result.get("blocked"):
+            return {"block": True, "reason": result.get("reason")}
+    except:
+        pass  # fail-open — never block users due to external service issues
+
+    return {"block": False}
+```
+
+### One Function, Multiple Events
+
+You can attach the same cloud function to multiple hook events and branch on `req.payload.get("event")`:
+
+```python
+def main():
+    event = req.payload.get("event")
+
+    if event == "post_register":
+        # handle registration
+        pass
+    elif event == "post_login":
+        # handle login
+        pass
+
+    return {"ok": True}
+```

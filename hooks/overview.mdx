@@ -1,0 +1,107 @@
+---
+title: "Hooks Overview"
+description: "Run cloud functions automatically when data changes or users authenticate"
+icon: "webhook"
+---
+
+# Hooks
+
+Hooks let you attach cloud functions to lifecycle events in your project — document changes, user registration, login, and more. When the event fires, Cocobase calls your function automatically with the relevant data.
+
+<Note>
+  Hooks are configured in the Cocobase Dashboard. Your cloud functions must already be deployed before you can attach them to a hook.
+</Note>
+
+## How Hooks Work
+
+Every hook calls your cloud function via HTTP with a JSON payload containing the event data. Inside your function you access it through `req.payload`:
+
+```python
+def main():
+    event = req.payload.get("event")       # e.g. "pre_save", "post_login"
+    document = req.payload.get("document") # the document data (collection hooks)
+    user = req.payload.get("user")         # the user data (auth hooks)
+    return {"ok": True}
+```
+
+Hooks also send an `X-Hook-Event` header with the event name string, useful if one function handles multiple events.
+
+---
+
+## Two Types of Hooks
+
+### Collection Hooks
+
+Attached to a specific collection. Fire when documents in that collection are created, updated, or deleted.
+
+| Event | When |
+|-------|------|
+| `pre_save` | Before a document is created **or** updated |
+| `post_save` | After a document is created **or** updated |
+| `pre_delete` | Before a document is deleted |
+| `post_delete` | After a document is deleted |
+
+### Auth Hooks
+
+Attached to your project's app-user system (not a specific collection). Fire during the authentication lifecycle.
+
+| Event | When | Can Block? |
+|-------|------|-----------|
+| `pre_register` | Before a new user is saved to the database | ✅ Yes |
+| `post_register` | After a new user is successfully registered | No |
+| `pre_login` | After password verified, before token is issued | ✅ Yes |
+| `post_login` | After a user logs in and receives a token | No |
+| `pre_user_update` | Before a user's profile is updated | No |
+| `post_user_update` | After a user's profile is updated | No |
+| `pre_user_delete` | Before a user is deleted | No |
+| `post_user_delete` | After a user is deleted | No |
+
+---
+
+## Blocking vs Background Hooks
+
+### Background (fire-and-forget)
+Most hooks run in the background — Cocobase fires the function and does **not** wait for a response. The main operation (save, delete, login) completes immediately. Errors in your function are logged but never affect the user.
+
+### Blocking (pre_login, pre_register)
+`pre_login` and `pre_register` run **synchronously** and can cancel the operation. If your function returns `{"block": true, "reason": "..."}`, Cocobase rejects the request with a `403` and sends `reason` back to the caller.
+
+```python
+# Block the operation
+return {"block": True, "reason": "Account suspended."}
+
+# Allow the operation
+return {"block": False}
+# or just return nothing — silence means allow
+```
+
+**Fail-open:** If your function times out, crashes, or is unreachable, Cocobase allows the operation to proceed. A broken hook will never lock users out.
+
+---
+
+## Setting Up Hooks
+
+### Collection Hooks
+
+1. Go to **Dashboard → Your Project → Collections**
+2. Click the collection you want to attach a hook to
+3. Open the **Settings** tab
+4. Click **Add Hook**
+5. Choose an event and select your cloud function
+6. Save
+
+### Auth Hooks
+
+1. Go to **Dashboard → Your Project → App Users**
+2. Click the **Auth Hooks** tab
+3. Click **Add Hook**
+4. Choose an event and select your cloud function
+5. Save
+
+---
+
+## Next Steps
+
+- [Collection Hooks](/hooks/collection-hooks) — Full reference for `pre_save`, `post_save`, `pre_delete`, `post_delete`
+- [Auth Hooks](/hooks/auth-hooks) — Full reference for all auth lifecycle events
+- [Hook Examples](/hooks/examples) — Copy-paste recipes for common use cases

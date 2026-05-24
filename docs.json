@@ -60,6 +60,15 @@
             ]
           },
           {
+            "group": "Hooks",
+            "pages": [
+              "hooks/overview",
+              "hooks/collection-hooks",
+              "hooks/auth-hooks",
+              "hooks/examples"
+            ]
+          },
+          {
             "group": "SDK Reference",
             "pages": [
               "sdk-reference/javascript",
