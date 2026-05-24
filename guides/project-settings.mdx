@@ -1,0 +1,356 @@
+---
+title: "Project Settings"
+description: "Configure your project's API key, team access, auth behavior, and environment variables"
+icon: "sliders"
+---
+
+# Project Settings
+
+Every project has a Settings page where you control credentials, team members, authentication behavior, and environment variables for cloud functions.
+
+**How to get there:**
+
+```
+Dashboard → [Your Project] → Settings
+                                  ↑
+              Left sidebar navigation item
+```
+
+```
+app.cocobase.cc
+  └── Dashboard (project list)
+        └── Click a project row
+              └── Left sidebar → Settings
+```
+
+The Settings page has three tabs:
+
+| Tab | What's in it |
+|-----|-------------|
+| **General** | Project name, API key, allowed origins (CORS) |
+| **Team** | Invite teammates, manage access |
+| **Configs** | Auth behavior, email URLs, environment variables |
+
+---
+
+## General Tab
+
+```
+Settings → General
+```
+
+### API Key
+
+Your project's API key authenticates every SDK and HTTP request from your app. It must be sent in the `X-API-Key` header.
+
+```
+⚠️  Keep this secret. Anyone with this key can read and write
+    all your project's data.
+```
+
+- Click **Copy** to copy the key to clipboard
+- Click **Regenerate** to rotate to a new key (the old key stops working immediately)
+
+### Allowed Origins (CORS)
+
+Controls which domains are allowed to call your Cocobase API from a browser.
+
+```
+Settings → General → Allowed Origins
+```
+
+```
+[+ Add origin]   https://myapp.com      [×]
+                 https://staging.myapp.com  [×]
+                 http://localhost:3000   [×]
+```
+
+**Rules:**
+- Add every domain your frontend runs on
+- Include `http://localhost:PORT` for local development
+- Wildcards (`*`) are not supported — list each origin explicitly
+- Mobile apps and server-side code don't need CORS (add them anyway if you see errors)
+
+**To add an origin:**
+1. Type the full URL (including `https://`) into the input
+2. Click **Add** or press Enter
+3. Click **Save**
+
+---
+
+## Team Tab
+
+```
+Settings → Team
+```
+
+Invite other Cocobase users to collaborate on your project. Teammates can access the dashboard, view data, and manage collections — but only the **owner** can delete the project or regenerate the API key.
+
+### Invite a Teammate
+
+```
+Settings → Team → [Email address input] → Send invite
+```
+
+1. Enter the teammate's Cocobase account email
+2. Click **Invite**
+3. They appear in the team list immediately — they'll see the project in their dashboard
+
+### Remove a Teammate
+
+Click the trash icon next to their name. They lose access immediately.
+
+### Leaving a Project (teammates only)
+
+If you're a teammate (not the owner), you'll see a **Leave** button on the project row in your dashboard:
+
+```
+Dashboard → Project row → Leave button (↖ exit icon)
+```
+
+---
+
+## Configs Tab
+
+```
+Settings → Configs
+```
+
+The Configs tab has two sections:
+1. **Project configuration** — built-in settings that control Cocobase behavior
+2. **Environment variables** — custom key/value pairs for your cloud functions
+
+---
+
+## Project Configuration
+
+These are the built-in config keys. You can set them with the toggles and inputs in the dashboard, or read them from `config.get("KEY")` inside cloud functions.
+
+### Auth
+
+#### `JWT_EXPIRY_MINUTES`
+
+```
+Type: integer   Default: 2880 (2 days)   Min: 1
+```
+
+How long app-user JWT tokens are valid, in minutes. After this time the user must log in again.
+
+| Value | Meaning |
+|-------|---------|
+| `60` | 1 hour |
+| `1440` | 1 day |
+| `2880` | 2 days (default) |
+| `43200` | 30 days |
+
+---
+
+#### `ENABLE_2FA`
+
+```
+Type: boolean   Default: false
+```
+
+Enable two-factor authentication for app users. When on, after entering their password correctly, the user receives a one-time code by email and must enter it to complete login.
+
+Works alongside `OTP_LENGTH`. Users can individually opt out of 2FA on their account (if you allow it).
+
+---
+
+#### `ENABLE_PHONE_LOGIN`
+
+```
+Type: boolean   Default: false
+```
+
+Allow app users to authenticate via phone number and a one-time SMS/email code instead of email + password. Requires phone verification setup.
+
+---
+
+#### `ENABLE_EMAIL_VERIFICATION`
+
+```
+Type: boolean   Default: false
+```
+
+Require new users to verify their email address before their account is considered active. On signup, Cocobase sends a verification email. Until verified, the account exists but `email_verified` is `false`.
+
+Pair with `VERIFICATION_URL` to point users to your own verification page, or leave it blank to use the Cocobase-hosted one.
+
+---
+
+#### `OTP_LENGTH`
+
+```
+Type: integer   Default: 6   Range: 4–10
+```
+
+Number of digits in OTP codes sent for 2FA and phone login. Use `4` for shorter codes (friendlier UX), `8` or `10` for higher security.
+
+---
+
+#### `ALLOWED_SELF_ROLES`
+
+```
+Type: string (comma-separated)   Default: null (all roles allowed)
+```
+
+Roles that app users can assign to **themselves** during signup or profile update. If this is not set, users can claim any role.
+
+**Example — only allow `user` and `seller` to be self-assigned:**
+```
+user,seller
+```
+
+Roles not in this list (e.g. `admin`, `moderator`) can only be assigned server-side via cloud functions or the dashboard.
+
+---
+
+### Email
+
+These settings control the URLs included in system emails (verification, welcome, password reset).
+
+#### `SEND_WELCOME_EMAIL`
+
+```
+Type: boolean   Default: true
+```
+
+Send a welcome email to new app users when they register. Disable this if you send your own welcome email via a `post_register` hook.
+
+---
+
+#### `FRONTEND_URL`
+
+```
+Type: string   Default: null
+```
+
+The base URL of your app's frontend (e.g. `https://myapp.com`). Used as a fallback when more specific URL configs are not set, and included in email templates as a "go to app" link.
+
+**Set this first** — the other URL configs fall back to it.
+
+---
+
+#### `VERIFICATION_URL`
+
+```
+Type: string   Default: null
+```
+
+Base URL for email verification links. When a new user registers with `ENABLE_EMAIL_VERIFICATION` on, Cocobase sends them a link:
+
+```
+{VERIFICATION_URL}?token=<token>
+```
+
+Your page should read the `token` query param and call the verification endpoint. If not set, falls back to `FRONTEND_URL`, then to the Cocobase-hosted verification page.
+
+**Example:** `https://myapp.com/verify-email`
+
+---
+
+#### `VERIFICATION_SUCCESS_URL`
+
+```
+Type: string   Default: null
+```
+
+Where to redirect users after they successfully verify their email. If not set, Cocobase shows a default confirmation page.
+
+**Example:** `https://myapp.com/welcome`
+
+---
+
+#### `LOGIN_URL`
+
+```
+Type: string   Default: null
+```
+
+URL of your app's login page. Included in welcome emails and password-reset emails so users can find their way back.
+
+**Example:** `https://myapp.com/login`
+
+---
+
+#### `PASSWORD_RESET_URL`
+
+```
+Type: string   Default: null
+```
+
+Custom URL for your password-reset page. When a user requests a password reset, Cocobase sends them:
+
+```
+{PASSWORD_RESET_URL}?token=<token>
+```
+
+Your page reads the token and calls the reset endpoint. If not set, uses the Cocobase-hosted reset page.
+
+**Example:** `https://myapp.com/reset-password`
+
+---
+
+## Environment Variables
+
+```
+Settings → Configs → Environment Variables section
+```
+
+Store any custom key/value pair here — API keys, feature flags, external service URLs. Access them inside cloud functions with `config.get("MY_KEY")`.
+
+```
+[Key]               [Value]
+STRIPE_API_KEY      sk_live_...          👁  🗑
+SLACK_WEBHOOK_URL   https://hooks...     👁  🗑
+APP_ENV             production           👁  🗑
+
+[+ Add new variable]
+```
+
+**Rules:**
+- Keys are auto-uppercased and spaces become `_`
+- Values are masked by default (click the eye icon to reveal)
+- Keys that match a built-in config name are rejected — use the Config section above for those
+- Changes take effect on the next function execution (no restart needed)
+
+**Reading in cloud functions:**
+```python
+def main():
+    stripe_key = config.get("STRIPE_API_KEY")
+    slack_url  = config.get("SLACK_WEBHOOK_URL")
+    env        = config.get("APP_ENV", "production")  # with default
+    ...
+```
+
+---
+
+## Quick Navigation Map
+
+```
+app.cocobase.cc
+│
+├── Dashboard (project list)
+│     └── Click any project row
+│
+└── Project Dashboard
+      │
+      ├── Overview          ← landing page
+      ├── Collections       ← data / schema
+      ├── App Users         ← auth users + hooks
+      │     └── Auth Hooks tab
+      ├── Cloud Functions   ← deploy Python functions
+      ├── Cron Jobs         ← scheduled function runs
+      ├── Storage           ← files / media / static
+      ├── Email             ← SMTP + templates + logs
+      ├── Analytics
+      │     ├── Overview
+      │     ├── Usage & Plan  ← quota bars
+      │     └── Functions
+      ├── Subscriptions     ← upgrade plan / voucher
+      └── Settings  ◄──── you are here
+            ├── General     ← API key + CORS origins
+            ├── Team        ← invite teammates
+            └── Configs     ← auth config + env vars
+```

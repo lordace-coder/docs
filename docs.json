@@ -26,25 +26,26 @@
         "groups": [
           {
             "group": "Getting Started",
-            "pages": ["index", "quickstart", "guides/getting-started"]
+            "pages": [
+              "index",
+              "quickstart",
+              "guides/getting-started"
+            ]
           },
           {
             "group": "Core Concepts",
             "pages": [
-              "core-concepts/authentication",
               "core-concepts/collections",
-              "core-concepts/data-types"
+              "core-concepts/data-types",
+              "core-concepts/authentication"
             ]
           },
           {
-            "group": "Features",
+            "group": "Data & Querying",
             "pages": [
               "features/crud-operations",
               "features/querying",
-              "features/realtime",
               "features/relationships",
-              "features/file-storage",
-              "features/cloud-functions",
               "features/advanced"
             ]
           },
@@ -53,6 +54,7 @@
             "pages": [
               "cloud-functions/introduction",
               "cloud-functions/environment",
+              "cloud-functions/database-advanced",
               "cloud-functions/queue",
               "cloud-functions/email",
               "cloud-functions/quick-reference",
@@ -69,23 +71,49 @@
             ]
           },
           {
-            "group": "SDK Reference",
+            "group": "Realtime & Multiplayer",
             "pages": [
-              "sdk-reference/javascript",
-              "sdk-reference/flutter",
-              "sdk-reference/mcp",
-              "sdk-reference/python",
-              "sdk-reference/golang"
+              "features/realtime",
+              "multiplayer/overview",
+              "multiplayer/quickstart",
+              "multiplayer/game-loop",
+              "multiplayer/api-reference",
+              "multiplayer/examples",
+              "multiplayer/best-practices"
+            ]
+          },
+          {
+            "group": "Storage",
+            "pages": [
+              "features/file-storage"
+            ]
+          },
+          {
+            "group": "Auth & Security",
+            "pages": [
+              "guides/role-based-access",
+              "guides/security"
             ]
           },
           {
             "group": "Guides",
             "pages": [
-              "guides/best-practices",
-              "guides/migrations",
-              "guides/role-based-access",
+              "guides/project-settings",
               "guides/email-integration",
+              "guides/migrations",
+              "guides/performance",
+              "guides/best-practices",
               "guides/troubleshooting"
+            ]
+          },
+          {
+            "group": "SDK Reference",
+            "pages": [
+              "sdk-reference/javascript",
+              "sdk-reference/flutter",
+              "sdk-reference/python",
+              "sdk-reference/golang",
+              "sdk-reference/mcp"
             ]
           },
           {
@@ -109,7 +137,11 @@
           {
             "group": "Complete Applications",
             "pages": [
-              "examples/complete-apps"
+              "examples/complete-apps",
+              "examples/todo-app",
+              "examples/chat-app",
+              "examples/social-media",
+              "examples/ecommerce"
             ]
           }
         ]
